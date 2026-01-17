@@ -1,21 +1,71 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Mountain View RV Park – Van Horn, TX</title>
+  <title>Mountain View RV Park – Premium Van Horn, TX RV Sites</title>
+  <meta name="description" content="Experience the best RV camping in Van Horn, TX at Mountain View RV Park. Full hookups, high-speed Wi-Fi, mountain views, and desert tranquility await.">
+  <meta name="keywords" content="RV Park Van Horn TX, Camping West Texas, Guadalupe Mountains RV, Sierra Blanca Camping, RV Sites with Wi-Fi, Full Hookup RV Park">
+  
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&family=Playfair+Display:wght@700&display=swap');
+    
     body {
       font-family: 'Inter', sans-serif;
     }
     h1, h2, h3 {
       font-family: 'Playfair Display', serif;
     }
+
+    /* Google Translate Styles */
+    #google_translate_element {
+      display: inline-block;
+    }
+    .goog-te-gadget-simple {
+      background-color: transparent !important;
+      border: none !important;
+      padding: 0 !important;
+      font-size: 12px !important;
+    }
+    .goog-te-menu-value span {
+      color: #166534 !important; /* emerald-800 */
+      font-weight: 600 !important;
+    }
+    .goog-te-gadget-icon {
+      display: none !important;
+    }
+    
+    /* Dark Mode Transitions */
+    body {
+      transition: background-color 0.3s ease, color 0.3s ease;
+    }
   </style>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            serif: ['Playfair Display', 'serif'],
+          },
+        }
+      }
+    }
+  </script>
+  <script type="text/javascript">
+    function googleTranslateElementInit() {
+      new google.translate.TranslateElement({
+        pageLanguage: 'en', 
+        includedLanguages: 'en,es', 
+        layout: google.translate.TranslateElement.InlineLayout.SIMPLE,
+        autoDisplay: false
+      }, 'google_translate_element');
+    }
+  </script>
+  <script type="text/javascript" src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
 <script type="importmap">
 {
   "imports": {
@@ -29,7 +79,7 @@
 }
 </script>
 </head>
-<body class="bg-stone-50 text-stone-900">
+<body class="bg-stone-50 text-stone-900 dark:bg-stone-950 dark:text-stone-100">
   <div id="root"></div>
 </body>
 </html>
