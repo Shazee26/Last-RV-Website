@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { supabase } from '../lib/supabase';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 const Login: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -11,7 +11,12 @@ const Login: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+  
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // Get the intended destination from location state (set by ProtectedRoute)
+  const from = (location.state as any)?.from?.pathname || '/';
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -33,7 +38,8 @@ const Login: React.FC = () => {
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
-        navigate('/');
+        // Redirect to intended page or home
+        navigate(from, { replace: true });
       }
     } catch (err: any) {
       setError(err.message);
