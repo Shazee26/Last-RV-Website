@@ -4,7 +4,7 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 import { GalleryImage } from '../types/database';
 
-// Curated collection reflecting the specific visuals provided by the user (Sunsets, Park Signs, RV setups)
+// Curated collection reflecting the specific visuals: Yellow signs, arched entrances, and desert vistas
 const FEATURED_IMAGES: GalleryImage[] = [
   {
     url: 'https://images.unsplash.com/photo-1470240731273-7821a6eeb6bd?q=80&w=2070&auto=format&fit=crop',
@@ -117,10 +117,12 @@ const Gallery: React.FC = () => {
       if (error) throw error;
       
       const dbImages = data || [];
-      // Newest user-uploaded images first, followed by our large featured collection
+      // Combine user uploads with the featured collection to ensure a populated look
       setImages([...dbImages, ...FEATURED_IMAGES]);
-    } catch (err) {
-      console.error('Gallery fetch error:', err);
+    } catch (err: any) {
+      // Defensive string handling for the error to prevent [object Object]
+      const errorMsg = err?.message || (typeof err === 'string' ? err : 'A desert storm briefly blocked the view. Please try again.');
+      console.error('Gallery fetch error:', errorMsg);
       setImages(FEATURED_IMAGES);
     } finally {
       setLoading(false);
@@ -192,7 +194,7 @@ const Gallery: React.FC = () => {
         .from('gallery_images')
         .insert([{ 
           url: publicUrl, 
-          title: uploadTitle || 'Untitled Guest Photo', 
+          title: uploadTitle || 'Guest Memory', 
           category: uploadCategory,
           user_id: user.id 
         }]);
@@ -204,16 +206,17 @@ const Gallery: React.FC = () => {
       setPreviewUrl(null);
       setStatus({ 
         type: 'success', 
-        message: 'Successfully shared! Your photo is now featured in the gallery.' 
+        message: 'Success! Refreshing the wall with your new memory...' 
       });
       
-      // Refresh the image list immediately to include the new upload
+      // Explicitly trigger a refresh to show the new content
       await fetchGallery(true);
       
       setTimeout(() => setStatus(null), 6000);
     } catch (err: any) {
-      console.error('Full Upload Process Error:', err);
-      setStatus({ type: 'error', message: 'Upload failed: ' + err.message });
+      const errorMsg = err?.message || (typeof err === 'string' ? err : 'The upload failed. Please try again.');
+      console.error('Upload Process Error:', errorMsg);
+      setStatus({ type: 'error', message: errorMsg });
     } finally {
       setUploading(false);
     }
@@ -337,12 +340,12 @@ const Gallery: React.FC = () => {
                 {uploading ? (
                   <>
                     <i className="fa-solid fa-spinner animate-spin"></i>
-                    <span>Uploading...</span>
+                    <span>Sharing memory...</span>
                   </>
                 ) : (
                   <>
                     <i className="fa-solid fa-paper-plane text-[10px]"></i>
-                    <span>Publish Memory</span>
+                    <span>Publish to Wall</span>
                   </>
                 )}
               </button>
