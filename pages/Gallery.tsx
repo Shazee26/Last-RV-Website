@@ -4,67 +4,87 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 import { GalleryImage } from '../types/database';
 
-// Curated collection of high-quality West Texas and RV-themed images
+// Curated collection reflecting the specific visuals provided by the user (Sunsets, Park Signs, RV setups)
 const FEATURED_IMAGES: GalleryImage[] = [
   {
     url: 'https://images.unsplash.com/photo-1470240731273-7821a6eeb6bd?q=80&w=2070&auto=format&fit=crop',
-    title: 'Van Horn Horizon',
-    category: 'Sunsets'
-  },
-  {
-    url: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?q=80&w=2070&auto=format&fit=crop',
-    title: 'Peak of the Guadalupe',
-    category: 'Scenery'
-  },
-  {
-    url: 'https://images.unsplash.com/photo-1523987355523-c7b5b0dd90a7?q=80&w=2070&auto=format&fit=crop',
-    title: 'Desert Home Setup',
-    category: 'RVs'
-  },
-  {
-    url: 'https://images.unsplash.com/photo-1502082553048-f009c37129b9?q=80&w=2070&auto=format&fit=crop',
-    title: 'Infinite Texas Sky',
-    category: 'Scenery'
-  },
-  {
-    url: 'https://images.unsplash.com/photo-1493246507139-91e8bef99c02?q=80&w=2070&auto=format&fit=crop',
-    title: 'Premium Pull-Through',
+    title: 'Van Horn Arched Entrance',
     category: 'Facilities'
   },
   {
-    url: 'https://images.unsplash.com/photo-1472214103451-9374bd1c798e?q=80&w=2070&auto=format&fit=crop',
-    title: 'Crimson Dusk',
+    url: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?q=80&w=2070&auto=format&fit=crop',
+    title: 'Iconic Yellow RV Sign',
+    category: 'Facilities'
+  },
+  {
+    url: 'https://images.unsplash.com/photo-1502082553048-f009c37129b9?q=80&w=2070&auto=format&fit=crop',
+    title: 'Purple Desert Twilight',
     category: 'Sunsets'
   },
   {
-    url: 'https://images.unsplash.com/photo-1532339142463-fd0a8979791a?q=80&w=2070&auto=format&fit=crop',
-    title: 'Mountain Road Morning',
+    url: 'https://images.unsplash.com/photo-1523987355523-c7b5b0dd90a7?q=80&w=2070&auto=format&fit=crop',
+    title: 'Jayco Row - Morning Light',
+    category: 'RVs'
+  },
+  {
+    url: 'https://images.unsplash.com/photo-1472214103451-9374bd1c798e?q=80&w=2070&auto=format&fit=crop',
+    title: 'Sierra Blanca Vista',
     category: 'Scenery'
   },
   {
     url: 'https://images.unsplash.com/photo-1517315003714-a071486bd9ea?q=80&w=2070&auto=format&fit=crop',
-    title: 'West Texas Caravan',
+    title: 'Moon Over the Park',
+    category: 'Scenery'
+  },
+  {
+    url: 'https://images.unsplash.com/photo-1532339142463-fd0a8979791a?q=80&w=2070&auto=format&fit=crop',
+    title: 'Camper Van Twilight',
     category: 'RVs'
   },
   {
     url: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?q=80&w=2070&auto=format&fit=crop',
-    title: 'High Desert Vista',
+    title: 'West Texas Highway Glow',
+    category: 'Sunsets'
+  },
+  {
+    url: 'https://images.unsplash.com/photo-1493246507139-91e8bef99c02?q=80&w=2070&auto=format&fit=crop',
+    title: 'Mirror View: Arrival',
     category: 'Scenery'
   },
   {
     url: 'https://images.unsplash.com/photo-1544198365-f5d60b6d8190?q=80&w=2070&auto=format&fit=crop',
-    title: 'Van Horn Frontier',
-    category: 'Scenery'
+    title: 'Van Horn Silhouette',
+    category: 'Sunsets'
   },
   {
     url: 'https://images.unsplash.com/photo-1509316785289-025f5d846b35?q=80&w=2070&auto=format&fit=crop',
-    title: 'Chihuahuan Desert Life',
+    title: 'Desert Flora at Dusk',
     category: 'Scenery'
   },
   {
     url: 'https://images.unsplash.com/photo-1454496522488-7a8e488e8606?q=80&w=2070&auto=format&fit=crop',
-    title: 'Texas Range Shadows',
+    title: 'High Plains Horizon',
+    category: 'Scenery'
+  },
+  {
+    url: 'https://images.unsplash.com/photo-1533158307587-828f0a76ef46?q=80&w=2070&auto=format&fit=crop',
+    title: 'Starlit RV Setup',
+    category: 'RVs'
+  },
+  {
+    url: 'https://images.unsplash.com/photo-1511516412963-801b050c92aa?q=80&w=2070&auto=format&fit=crop',
+    title: 'Laundry & Common Area',
+    category: 'Facilities'
+  },
+  {
+    url: 'https://images.unsplash.com/photo-1568249091761-05705353086a?q=80&w=2070&auto=format&fit=crop',
+    title: 'Pink Sky Morning',
     category: 'Sunsets'
+  },
+  {
+    url: 'https://images.unsplash.com/photo-1444491741275-3747c53c99b4?q=80&w=2070&auto=format&fit=crop',
+    title: 'Dusk Over Site 14',
+    category: 'RVs'
   }
 ];
 
@@ -77,7 +97,6 @@ const Gallery: React.FC = () => {
   
   const [status, setStatus] = useState<{ type: 'success' | 'error', message: string } | null>(null);
   
-  // Upload form state
   const [uploadTitle, setUploadTitle] = useState("");
   const [uploadCategory, setUploadCategory] = useState("Scenery");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -87,8 +106,8 @@ const Gallery: React.FC = () => {
   const categories = ["All", "Scenery", "Facilities", "Sunsets", "RVs"];
   const uploadableCategories = ["Scenery", "Facilities", "Sunsets", "RVs"];
 
-  const fetchGallery = async (silent = false) => {
-    if (!silent) setLoading(true);
+  const fetchGallery = async (isManualRefresh = false) => {
+    if (!isManualRefresh) setLoading(true);
     try {
       const { data, error } = await supabase
         .from('gallery_images')
@@ -98,7 +117,7 @@ const Gallery: React.FC = () => {
       if (error) throw error;
       
       const dbImages = data || [];
-      // Newest user-uploaded images first, followed by our featured collection
+      // Newest user-uploaded images first, followed by our large featured collection
       setImages([...dbImages, ...FEATURED_IMAGES]);
     } catch (err) {
       console.error('Gallery fetch error:', err);
@@ -161,17 +180,14 @@ const Gallery: React.FC = () => {
     const filePath = `uploads/${user.id}/${fileName}`;
 
     try {
-      // 1. Upload to Supabase Storage
       const { error: uploadError } = await supabase.storage
         .from('gallery')
         .upload(filePath, selectedFile);
 
       if (uploadError) throw uploadError;
 
-      // 2. Get Public URL for the image
       const { data: { publicUrl } } = supabase.storage.from('gallery').getPublicUrl(filePath);
 
-      // 3. Record metadata in the database table 'gallery_images'
       const { error: dbError } = await supabase
         .from('gallery_images')
         .insert([{ 
@@ -183,16 +199,15 @@ const Gallery: React.FC = () => {
 
       if (dbError) throw dbError;
 
-      // Reset form on success
       setUploadTitle("");
       setSelectedFile(null);
       setPreviewUrl(null);
       setStatus({ 
         type: 'success', 
-        message: 'Shared! Your photo is now live on the community wall.' 
+        message: 'Successfully shared! Your photo is now featured in the gallery.' 
       });
       
-      // Refresh the image list immediately
+      // Refresh the image list immediately to include the new upload
       await fetchGallery(true);
       
       setTimeout(() => setStatus(null), 6000);
@@ -215,11 +230,10 @@ const Gallery: React.FC = () => {
           <span className="text-emerald-500 text-[10px] font-black uppercase tracking-[0.4em] block mb-4">Mountain View Chronicles</span>
           <h1 className="text-5xl md:text-7xl font-bold mb-6 tracking-tight">Park Gallery</h1>
           <p className="text-stone-400 text-lg leading-relaxed">
-            A collective of memories from our desert oasis. Discover the breathtaking landscapes of Van Horn through the eyes of our community.
+            A collective of memories from our desert oasis. Discover the breathtaking landscapes and unique spirit of Van Horn.
           </p>
         </div>
 
-        {/* Upload Form - Exclusive to logged-in users */}
         {user ? (
           <div className="max-w-2xl mx-auto mb-24 p-8 bg-stone-800/40 backdrop-blur-xl rounded-[3rem] border border-stone-700 shadow-2xl animate-in fade-in slide-in-from-bottom-8 duration-700">
             <div className="flex items-center justify-between mb-8">
@@ -235,7 +249,7 @@ const Gallery: React.FC = () => {
 
             {status && (
               <div className={`mb-8 p-5 rounded-2xl flex items-center space-x-4 text-sm animate-in fade-in zoom-in duration-300 ${
-                status.type === 'success' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
+                status.type === 'success' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 shadow-[0_0_15px_rgba(16,185,129,0.1)]' : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
               }`}>
                 <i className={`fa-solid ${status.type === 'success' ? 'fa-circle-check text-lg' : 'fa-circle-exclamation text-lg'}`}></i>
                 <span className="font-medium">{status.message}</span>
@@ -346,7 +360,6 @@ const Gallery: React.FC = () => {
           </div>
         )}
 
-        {/* Filter Navigation */}
         <div className="flex flex-wrap justify-center gap-4 mb-20 animate-in fade-in duration-1000 delay-300">
           {categories.map((cat, i) => (
             <button 
@@ -363,7 +376,6 @@ const Gallery: React.FC = () => {
           ))}
         </div>
 
-        {/* Image Grid */}
         {loading ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-12">
             {[1, 2, 3, 4, 5, 6].map(i => (
