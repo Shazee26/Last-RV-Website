@@ -1,17 +1,46 @@
 
 import React, { useState } from 'react';
+import { supabase } from '../lib/supabase';
+import { Booking as BookingType } from '../types/database';
 
 const Booking: React.FC = () => {
-  const [formData, setFormData] = useState({
-    checkIn: '',
-    checkOut: '',
-    rvSize: 'standard',
-    guests: 2
+  const [formData, setFormData] = useState<Omit<BookingType, 'id' | 'created_at'>>({
+    name: '',
+    email: '',
+    check_in: '',
+    check_out: '',
+    rv_size: 'standard',
+    guests: 2,
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [status, setStatus] = useState<{ type: 'success' | 'error', message: string } | null>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    alert("Booking inquiry sent! Our team will contact you shortly to confirm availability.");
+    setIsSubmitting(true);
+    setStatus(null);
+    
+    try {
+      const { error } = await supabase
+        .from('bookings')
+        .insert([formData]);
+
+      if (error) throw error;
+
+      setStatus({ 
+        type: 'success', 
+        message: "Howdy! Your reservation request was sent successfully. We'll be in touch soon." 
+      });
+      setFormData({ name: '', email: '', check_in: '', check_out: '', rv_size: 'standard', guests: 2 });
+    } catch (err: any) {
+      console.error('Booking Error:', err);
+      setStatus({ 
+        type: 'error', 
+        message: "The stars aren't aligning right now. We've logged your request locally, but please give us a call at (432) 555-0123 to confirm." 
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -24,7 +53,41 @@ const Booking: React.FC = () => {
             <h1 className="text-4xl font-bold text-stone-800 mb-2">Check Availability</h1>
             <p className="text-stone-500 mb-10">Select your dates to see our current openings.</p>
             
+            {status && (
+              <div className={`mb-8 p-4 rounded-xl flex items-center space-x-3 animate-in fade-in slide-in-from-top-2 duration-300 ${
+                status.type === 'success' ? 'bg-emerald-50 text-emerald-800 border border-emerald-100' : 'bg-amber-50 text-amber-800 border border-amber-100'
+              }`}>
+                <i className={`fa-solid ${status.type === 'success' ? 'fa-circle-check' : 'fa-triangle-exclamation'}`}></i>
+                <p className="text-sm font-medium">{status.message}</p>
+              </div>
+            )}
+
             <form onSubmit={handleSubmit} className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-bold text-stone-700 mb-2">Your Name</label>
+                  <input 
+                    type="text" 
+                    required 
+                    placeholder="John Doe"
+                    className="w-full bg-stone-50 border border-stone-200 rounded-xl px-4 py-3 focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
+                    value={formData.name}
+                    onChange={(e) => setFormData({...formData, name: e.target.value})}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-stone-700 mb-2">Email Address</label>
+                  <input 
+                    type="email" 
+                    required 
+                    placeholder="john@example.com"
+                    className="w-full bg-stone-50 border border-stone-200 rounded-xl px-4 py-3 focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
+                    value={formData.email}
+                    onChange={(e) => setFormData({...formData, email: e.target.value})}
+                  />
+                </div>
+              </div>
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <label className="block text-sm font-bold text-stone-700 mb-2">Check-In</label>
@@ -32,8 +95,8 @@ const Booking: React.FC = () => {
                     type="date" 
                     required 
                     className="w-full bg-stone-50 border border-stone-200 rounded-xl px-4 py-3 focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
-                    value={formData.checkIn}
-                    onChange={(e) => setFormData({...formData, checkIn: e.target.value})}
+                    value={formData.check_in}
+                    onChange={(e) => setFormData({...formData, check_in: e.target.value})}
                   />
                 </div>
                 <div>
@@ -42,8 +105,8 @@ const Booking: React.FC = () => {
                     type="date" 
                     required 
                     className="w-full bg-stone-50 border border-stone-200 rounded-xl px-4 py-3 focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
-                    value={formData.checkOut}
-                    onChange={(e) => setFormData({...formData, checkOut: e.target.value})}
+                    value={formData.check_out}
+                    onChange={(e) => setFormData({...formData, check_out: e.target.value})}
                   />
                 </div>
               </div>
@@ -53,8 +116,8 @@ const Booking: React.FC = () => {
                   <label className="block text-sm font-bold text-stone-700 mb-2">RV Size/Type</label>
                   <select 
                     className="w-full bg-stone-50 border border-stone-200 rounded-xl px-4 py-3 focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
-                    value={formData.rvSize}
-                    onChange={(e) => setFormData({...formData, rvSize: e.target.value})}
+                    value={formData.rv_size}
+                    onChange={(e) => setFormData({...formData, rv_size: e.target.value})}
                   >
                     <option value="standard">Standard (up to 30ft)</option>
                     <option value="large">Large (30ft - 45ft)</option>
@@ -69,13 +132,24 @@ const Booking: React.FC = () => {
                     max="8" 
                     className="w-full bg-stone-50 border border-stone-200 rounded-xl px-4 py-3 focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
                     value={formData.guests}
-                    onChange={(e) => setFormData({...formData, guests: parseInt(e.target.value)})}
+                    onChange={(e) => setFormData({...formData, guests: parseInt(e.target.value) || 1})}
                   />
                 </div>
               </div>
 
-              <button type="submit" className="w-full bg-emerald-700 text-white py-4 rounded-xl font-bold text-lg hover:bg-emerald-800 transition-all shadow-lg">
-                Submit Reservation Request
+              <button 
+                type="submit" 
+                disabled={isSubmitting}
+                className="w-full bg-emerald-700 text-white py-4 rounded-xl font-bold text-lg hover:bg-emerald-800 transition-all shadow-lg disabled:opacity-50 flex items-center justify-center space-x-2"
+              >
+                {isSubmitting ? (
+                  <>
+                    <i className="fa-solid fa-spinner animate-spin"></i>
+                    <span>Sending Inquiry...</span>
+                  </>
+                ) : (
+                  <span>Submit Reservation Request</span>
+                )}
               </button>
             </form>
             
@@ -102,8 +176,8 @@ const Booking: React.FC = () => {
                   <span className="font-bold">$750.00</span>
                 </div>
               </div>
-              <div className="mt-8 bg-white/10 p-4 rounded-xl">
-                <p className="text-sm">
+              <div className="mt-8 bg-white/10 p-4 rounded-xl text-xs sm:text-sm">
+                <p>
                   <i className="fa-solid fa-certificate text-amber-400 mr-2"></i>
                   We offer 10% off for Good Sam, Military, and AAA members.
                 </p>
