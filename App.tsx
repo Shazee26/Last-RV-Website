@@ -20,11 +20,11 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
   const navLinks = [
     { path: '/', label: 'Home' },
-    { path: '/about', label: 'About' },
     { path: '/amenities', label: 'Amenities' },
-    { path: '/booking', label: 'Booking' },
     { path: '/reviews', label: 'Reviews' },
     { path: '/gallery', label: 'Gallery' },
+    { path: '/booking', label: 'Booking' },
+    { path: '/about', label: 'About' },
     { path: '/contact', label: 'Contact' },
   ];
 
@@ -190,8 +190,9 @@ export default function App() {
         <Layout>
           <Routes>
             <Route path="/" element={<Home />} />
-            <Route path="/about" element={<About />} />
             <Route path="/amenities" element={<Amenities />} />
+            <Route path="/reviews" element={<Reviews />} />
+            <Route path="/gallery" element={<Gallery />} />
             <Route 
               path="/booking" 
               element={
@@ -200,8 +201,7 @@ export default function App() {
                 </ProtectedRoute>
               } 
             />
-            <Route path="/reviews" element={<Reviews />} />
-            <Route path="/gallery" element={<Gallery />} />
+            <Route path="/about" element={<About />} />
             <Route path="/contact" element={<Contact />} />
             <Route path="/login" element={<Login />} />
           </Routes>
