@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 import { Booking as BookingType } from '../types/database';
@@ -9,15 +9,40 @@ const Booking: React.FC = () => {
   const { user } = useAuth();
   const [formData, setFormData] = useState<Omit<BookingType, 'id' | 'created_at'>>({
     name: '',
-    email: '',
+    email: user?.email || '',
     check_in: '',
     check_out: '',
     rv_size: 'standard',
     guests: 2,
-    user_id: '',
+    user_id: user?.id || '',
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [status, setStatus] = useState<{ type: 'success' | 'error', message: string } | null>(null);
+  const [myBookings, setMyBookings] = useState<BookingType[]>([]);
+  const [isLoadingMyBookings, setIsLoadingMyBookings] = useState(true);
+
+  const fetchMyBookings = async () => {
+    if (!user) return;
+    setIsLoadingMyBookings(true);
+    try {
+      const { data, error } = await supabase
+        .from('bookings')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('check_in', { ascending: true });
+
+      if (error) throw error;
+      setMyBookings(data || []);
+    } catch (err) {
+      console.error('Error fetching my bookings:', err);
+    } finally {
+      setIsLoadingMyBookings(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchMyBookings();
+  }, [user]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -40,7 +65,16 @@ const Booking: React.FC = () => {
         type: 'success', 
         message: "Howdy! Your reservation request was sent. A confirmation email is on its way!" 
       });
-      setFormData({ name: '', email: '', check_in: '', check_out: '', rv_size: 'standard', guests: 2, user_id: '' });
+      setFormData({ 
+        name: '', 
+        email: user?.email || '', 
+        check_in: '', 
+        check_out: '', 
+        rv_size: 'standard', 
+        guests: 2, 
+        user_id: user?.id || '' 
+      });
+      fetchMyBookings(); // Refresh the list
     } catch (err: any) {
       console.error('Booking Error:', err);
       setStatus({ 
@@ -59,8 +93,8 @@ const Booking: React.FC = () => {
           
           <div className="flex-grow space-y-8">
             <div className="bg-white p-8 md:p-12 rounded-3xl shadow-xl border border-stone-100">
-              <h1 className="text-4xl font-bold text-stone-800 mb-2">Check Availability</h1>
-              <p className="text-stone-500 mb-10">Select your dates to see our current openings.</p>
+              <h1 className="text-4xl font-bold text-stone-800 mb-2">New Reservation</h1>
+              <p className="text-stone-500 mb-10">Select your dates to request a spot at the park.</p>
               
               {status && (
                 <div className={`mb-8 p-4 rounded-xl flex items-center space-x-3 animate-in fade-in slide-in-from-top-2 duration-300 ${
@@ -78,7 +112,8 @@ const Booking: React.FC = () => {
                     <input 
                       type="text" 
                       required 
-                      className="w-full bg-stone-50 border border-stone-200 rounded-xl px-4 py-3 outline-none"
+                      placeholder="Full Name"
+                      className="w-full bg-stone-50 border border-stone-200 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-emerald-500 transition-all"
                       value={formData.name}
                       onChange={(e) => setFormData({...formData, name: e.target.value})}
                     />
@@ -88,9 +123,9 @@ const Booking: React.FC = () => {
                     <input 
                       type="email" 
                       required 
-                      className="w-full bg-stone-50 border border-stone-200 rounded-xl px-4 py-3 outline-none"
+                      disabled
+                      className="w-full bg-stone-100 border border-stone-200 rounded-xl px-4 py-3 outline-none text-stone-500 cursor-not-allowed"
                       value={formData.email}
-                      onChange={(e) => setFormData({...formData, email: e.target.value})}
                     />
                   </div>
                 </div>
@@ -101,7 +136,7 @@ const Booking: React.FC = () => {
                     <input 
                       type="date" 
                       required 
-                      className="w-full bg-stone-50 border border-stone-200 rounded-xl px-4 py-3 outline-none"
+                      className="w-full bg-stone-50 border border-stone-200 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-emerald-500"
                       value={formData.check_in}
                       onChange={(e) => setFormData({...formData, check_in: e.target.value})}
                     />
@@ -111,7 +146,7 @@ const Booking: React.FC = () => {
                     <input 
                       type="date" 
                       required 
-                      className="w-full bg-stone-50 border border-stone-200 rounded-xl px-4 py-3 outline-none"
+                      className="w-full bg-stone-50 border border-stone-200 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-emerald-500"
                       value={formData.check_out}
                       onChange={(e) => setFormData({...formData, check_out: e.target.value})}
                     />
@@ -122,21 +157,21 @@ const Booking: React.FC = () => {
                   <div>
                     <label className="block text-sm font-bold text-stone-700 mb-2">RV Size</label>
                     <select 
-                      className="w-full bg-stone-50 border border-stone-200 rounded-xl px-4 py-3 outline-none"
+                      className="w-full bg-stone-50 border border-stone-200 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-emerald-500"
                       value={formData.rv_size}
                       onChange={(e) => setFormData({...formData, rv_size: e.target.value})}
                     >
-                      <option value="standard">Standard</option>
-                      <option value="large">Large</option>
+                      <option value="standard">Standard (up to 30ft)</option>
+                      <option value="large">Large (30ft - 45ft)</option>
                       <option value="premium">Premium Pull-Through</option>
                     </select>
                   </div>
                   <div>
-                    <label className="block text-sm font-bold text-stone-700 mb-2">Guests</label>
+                    <label className="block text-sm font-bold text-stone-700 mb-2">Number of Guests</label>
                     <input 
                       type="number" 
                       min="1" 
-                      className="w-full bg-stone-50 border border-stone-200 rounded-xl px-4 py-3 outline-none"
+                      className="w-full bg-stone-50 border border-stone-200 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-emerald-500"
                       value={formData.guests}
                       onChange={(e) => setFormData({...formData, guests: parseInt(e.target.value) || 1})}
                     />
@@ -146,17 +181,61 @@ const Booking: React.FC = () => {
                 <button 
                   type="submit" 
                   disabled={isSubmitting}
-                  className="w-full bg-emerald-700 text-white py-4 rounded-xl font-bold hover:bg-emerald-800 disabled:opacity-50"
+                  className="w-full bg-emerald-700 text-white py-4 rounded-xl font-bold hover:bg-emerald-800 transition-all shadow-lg disabled:opacity-50 flex items-center justify-center"
                 >
-                  {isSubmitting ? <i className="fa-solid fa-spinner animate-spin mr-2"></i> : 'Submit Request'}
+                  {isSubmitting ? <i className="fa-solid fa-spinner animate-spin mr-2"></i> : null}
+                  {isSubmitting ? 'Submitting...' : 'Submit Request'}
                 </button>
               </form>
             </div>
 
-            <AvailabilityCalendar />
+            {/* My Bookings Section */}
+            <div className="bg-white p-8 md:p-12 rounded-3xl shadow-xl border border-stone-100">
+              <h2 className="text-2xl font-bold text-stone-800 mb-6 flex items-center">
+                <i className="fa-solid fa-clipboard-list mr-3 text-emerald-600"></i>
+                My Bookings
+              </h2>
+              {isLoadingMyBookings ? (
+                <div className="space-y-4">
+                  {[1, 2].map(i => <div key={i} className="h-16 bg-stone-50 rounded-xl animate-pulse"></div>)}
+                </div>
+              ) : myBookings.length > 0 ? (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left">
+                    <thead>
+                      <tr className="text-stone-400 text-xs uppercase tracking-wider border-b border-stone-100">
+                        <th className="pb-4 font-semibold">Check-In</th>
+                        <th className="pb-4 font-semibold">Check-Out</th>
+                        <th className="pb-4 font-semibold">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-stone-50">
+                      {myBookings.map((b) => (
+                        <tr key={b.id}>
+                          <td className="py-4 text-sm text-stone-800 font-medium">{new Date(b.check_in).toLocaleDateString()}</td>
+                          <td className="py-4 text-sm text-stone-800 font-medium">{new Date(b.check_out).toLocaleDateString()}</td>
+                          <td className="py-4">
+                            <span className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase bg-amber-50 text-amber-600 border border-amber-100">
+                              Pending Review
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="text-center py-10 border-2 border-dashed border-stone-100 rounded-2xl">
+                  <i className="fa-solid fa-calendar-xmark text-stone-200 text-3xl mb-3"></i>
+                  <p className="text-stone-400 text-sm">You have no booking requests yet.</p>
+                </div>
+              )}
+            </div>
           </div>
 
           <div className="w-full lg:w-96 space-y-6">
+            <AvailabilityCalendar />
+            
             <div className="bg-emerald-900 text-white p-8 rounded-3xl shadow-xl">
               <h3 className="text-xl font-bold mb-4">Pricing</h3>
               <div className="space-y-4">

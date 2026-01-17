@@ -10,6 +10,7 @@ import Reviews from './pages/Reviews';
 import Gallery from './pages/Gallery';
 import Contact from './pages/Contact';
 import Login from './pages/Login';
+import ProtectedRoute from './components/ProtectedRoute';
 import AIConcierge from './components/AIConcierge';
 
 const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -54,7 +55,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
               {user ? (
                 <div className="flex items-center space-x-4">
-                  <span className="text-xs text-stone-400 font-medium">Hi, {user.email?.split('@')[0]}</span>
+                  <span className="text-xs text-stone-400 font-medium truncate max-w-[100px]">Hi, {user.email?.split('@')[0]}</span>
                   <button onClick={signOut} className="text-xs font-bold text-stone-600 hover:text-rose-600 transition-colors">
                     Logout
                   </button>
@@ -191,7 +192,14 @@ export default function App() {
             <Route path="/" element={<Home />} />
             <Route path="/about" element={<About />} />
             <Route path="/amenities" element={<Amenities />} />
-            <Route path="/booking" element={<Booking />} />
+            <Route 
+              path="/booking" 
+              element={
+                <ProtectedRoute>
+                  <Booking />
+                </ProtectedRoute>
+              } 
+            />
             <Route path="/reviews" element={<Reviews />} />
             <Route path="/gallery" element={<Gallery />} />
             <Route path="/contact" element={<Contact />} />
