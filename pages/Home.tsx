@@ -43,14 +43,9 @@ const Home: React.FC = () => {
       {/* Featured Reviews Excerpt */}
       <section className="py-20 px-4">
         <div className="max-w-7xl mx-auto">
-          <div className="flex justify-between items-end mb-12">
-            <div>
-              <h2 className="text-3xl font-bold text-stone-800 mb-2">Guest Experiences</h2>
-              <p className="text-stone-500">What our community says about their stay</p>
-            </div>
-            <Link to="/reviews" className="hidden sm:inline-block text-emerald-700 font-semibold hover:underline">
-              Read all reviews <i className="fa-solid fa-arrow-right ml-1"></i>
-            </Link>
+          <div className="mb-12">
+            <h2 className="text-3xl font-bold text-stone-800 mb-2">Guest Experiences</h2>
+            <p className="text-stone-500">What our community says about their stay</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {[1, 2, 3].map((i) => (

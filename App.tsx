@@ -6,7 +6,6 @@ import Home from './pages/Home';
 import About from './pages/About';
 import Amenities from './pages/Amenities';
 import Booking from './pages/Booking';
-import Reviews from './pages/Reviews';
 import Gallery from './pages/Gallery';
 import Contact from './pages/Contact';
 import Login from './pages/Login';
@@ -21,7 +20,6 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const navLinks = [
     { path: '/', label: 'Home' },
     { path: '/amenities', label: 'Amenities' },
-    { path: '/reviews', label: 'Reviews' },
     { path: '/gallery', label: 'Gallery' },
     { path: '/booking', label: 'Booking' },
     { path: '/about', label: 'About' },
@@ -191,7 +189,6 @@ export default function App() {
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/amenities" element={<Amenities />} />
-            <Route path="/reviews" element={<Reviews />} />
             <Route path="/gallery" element={<Gallery />} />
             <Route 
               path="/booking" 
