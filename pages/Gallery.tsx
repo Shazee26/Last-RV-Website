@@ -10,7 +10,12 @@ const Gallery: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [filter, setFilter] = useState("All");
+  
+  // Upload form states
+  const [uploadTitle, setUploadTitle] = useState("");
   const [uploadCategory, setUploadCategory] = useState("Scenery");
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   
   const categories = ["All", "Scenery", "Facilities", "Sunsets", "RVs"];
   const uploadableCategories = ["Scenery", "Facilities", "Sunsets", "RVs"];
@@ -31,12 +36,25 @@ const Gallery: React.FC = () => {
     fetchGallery();
   }, []);
 
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!e.target.files || e.target.files.length === 0) return;
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      setSelectedFile(file);
+      setPreviewUrl(URL.createObjectURL(file));
+      // Auto-fill title if empty
+      if (!uploadTitle) {
+        setUploadTitle(file.name.split('.')[0].replace(/[-_]/g, ' '));
+      }
+    }
+  };
+
+  const handleUpload = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedFile || !user) return;
+    
     setUploading(true);
 
-    const file = e.target.files[0];
-    const fileExt = file.name.split('.').pop();
+    const fileExt = selectedFile.name.split('.').pop();
     const fileName = `${Date.now()}-${Math.floor(Math.random() * 1000)}.${fileExt}`;
     const filePath = `uploads/${fileName}`;
 
@@ -44,7 +62,7 @@ const Gallery: React.FC = () => {
       // 1. Upload to Storage
       const { error: uploadError } = await supabase.storage
         .from('gallery')
-        .upload(filePath, file);
+        .upload(filePath, selectedFile);
 
       if (uploadError) throw uploadError;
 
@@ -56,15 +74,20 @@ const Gallery: React.FC = () => {
         .from('gallery_images')
         .insert([{ 
           url: publicUrl, 
-          title: file.name.split('.')[0].replace(/[-_]/g, ' '), 
+          title: uploadTitle || selectedFile.name.split('.')[0], 
           category: uploadCategory,
-          user_id: user?.id 
+          user_id: user.id 
         }]);
 
       if (dbError) throw dbError;
 
+      // Reset form
+      setUploadTitle("");
+      setSelectedFile(null);
+      setPreviewUrl(null);
+      
       fetchGallery();
-      alert('Photo added to the wall! Thanks for sharing.');
+      alert('Photo added to the wall! Thanks for sharing your Mountain View memory.');
     } catch (err: any) {
       console.error('Upload Error:', err);
       alert('Upload failed: ' + err.message);
@@ -92,51 +115,94 @@ const Gallery: React.FC = () => {
             <div className="flex items-center justify-between mb-8">
               <h4 className="font-bold text-xl flex items-center">
                 <i className="fa-solid fa-camera-retro mr-3 text-emerald-500"></i>
-                Share Your Stay
+                Post to the Gallery
               </h4>
-              <span className="text-[10px] font-bold uppercase tracking-widest text-stone-500">Admin/Guest Access</span>
+              <span className="text-[10px] font-bold uppercase tracking-widest text-stone-500">Authenticated Access</span>
             </div>
             
-            <div className="space-y-6">
-              <div>
-                <label className="block text-[10px] font-bold text-stone-500 uppercase tracking-widest mb-3">1. Select Category</label>
-                <div className="flex flex-wrap gap-2">
-                  {uploadableCategories.map((cat) => (
-                    <button
-                      key={cat}
-                      onClick={() => setUploadCategory(cat)}
-                      className={`px-4 py-2 rounded-xl text-xs font-bold transition-all border ${
-                        uploadCategory === cat 
-                          ? 'bg-emerald-600 border-emerald-500 text-white shadow-lg' 
-                          : 'bg-stone-900 border-stone-700 text-stone-400 hover:border-stone-500'
-                      }`}
-                    >
-                      {cat}
-                    </button>
-                  ))}
+            <form onSubmit={handleUpload} className="space-y-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-[10px] font-bold text-stone-500 uppercase tracking-widest mb-3">Photo Title</label>
+                  <input 
+                    type="text"
+                    required
+                    placeholder="e.g. Sunset over Sierra Blanca"
+                    className="w-full bg-stone-900 border border-stone-700 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-emerald-500 transition-all placeholder:text-stone-600"
+                    value={uploadTitle}
+                    onChange={(e) => setUploadTitle(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-bold text-stone-500 uppercase tracking-widest mb-3">Category</label>
+                  <div className="flex flex-wrap gap-2">
+                    {uploadableCategories.map((cat) => (
+                      <button
+                        key={cat}
+                        type="button"
+                        onClick={() => setUploadCategory(cat)}
+                        className={`px-4 py-2 rounded-xl text-[10px] font-bold uppercase transition-all border ${
+                          uploadCategory === cat 
+                            ? 'bg-emerald-600 border-emerald-500 text-white shadow-lg' 
+                            : 'bg-stone-900 border-stone-700 text-stone-400 hover:border-stone-500'
+                        }`}
+                      >
+                        {cat}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
 
               <div>
-                <label className="block text-[10px] font-bold text-stone-500 uppercase tracking-widest mb-3">2. Choose Image</label>
-                <label className={`flex flex-col items-center justify-center w-full h-40 px-4 transition bg-stone-900/50 border-2 border-stone-700 border-dashed rounded-3xl cursor-pointer hover:border-emerald-500/50 hover:bg-stone-900 transition-all group ${uploading ? 'opacity-50 cursor-not-allowed' : ''}`}>
-                  <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                    <i className={`fa-solid ${uploading ? 'fa-spinner animate-spin' : 'fa-cloud-arrow-up'} text-3xl text-stone-600 group-hover:text-emerald-500 mb-3 transition-colors`}></i>
-                    <p className="text-sm text-stone-500 font-medium">
-                      {uploading ? 'Processing your masterpiece...' : 'Click to browse or drag & drop'}
-                    </p>
-                    <p className="text-[10px] text-stone-600 mt-1 uppercase tracking-tighter">JPG, PNG, WebP up to 10MB</p>
+                <label className="block text-[10px] font-bold text-stone-500 uppercase tracking-widest mb-3">Image File</label>
+                {!previewUrl ? (
+                  <label className={`flex flex-col items-center justify-center w-full h-48 transition bg-stone-900/50 border-2 border-stone-700 border-dashed rounded-3xl cursor-pointer hover:border-emerald-500/50 hover:bg-stone-900 transition-all group ${uploading ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                    <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                      <i className="fa-solid fa-cloud-arrow-up text-3xl text-stone-600 group-hover:text-emerald-500 mb-3 transition-colors"></i>
+                      <p className="text-sm text-stone-500 font-medium">Click to browse your photos</p>
+                      <p className="text-[10px] text-stone-600 mt-1 uppercase tracking-tighter">JPG, PNG, WebP up to 10MB</p>
+                    </div>
+                    <input 
+                      type="file" 
+                      disabled={uploading} 
+                      onChange={handleFileChange} 
+                      className="hidden" 
+                      accept="image/*" 
+                    />
+                  </label>
+                ) : (
+                  <div className="relative rounded-3xl overflow-hidden h-48 border border-stone-700 group">
+                    <img src={previewUrl} alt="Preview" className="w-full h-full object-cover" />
+                    <button 
+                      type="button"
+                      onClick={() => { setSelectedFile(null); setPreviewUrl(null); }}
+                      className="absolute top-4 right-4 w-10 h-10 bg-stone-950/80 rounded-full flex items-center justify-center text-white hover:bg-rose-600 transition-colors"
+                    >
+                      <i className="fa-solid fa-xmark"></i>
+                    </button>
                   </div>
-                  <input 
-                    type="file" 
-                    disabled={uploading} 
-                    onChange={handleFileUpload} 
-                    className="hidden" 
-                    accept="image/*" 
-                  />
-                </label>
+                )}
               </div>
-            </div>
+
+              <button 
+                type="submit" 
+                disabled={uploading || !selectedFile}
+                className="w-full bg-emerald-600 text-white py-4 rounded-xl font-bold hover:bg-emerald-700 transition-all shadow-xl disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+              >
+                {uploading ? (
+                  <>
+                    <i className="fa-solid fa-spinner animate-spin"></i>
+                    <span>Uploading...</span>
+                  </>
+                ) : (
+                  <>
+                    <i className="fa-solid fa-upload text-xs"></i>
+                    <span>Share with the Community</span>
+                  </>
+                )}
+              </button>
+            </form>
           </div>
         )}
 
