@@ -25,7 +25,7 @@ const Booking: React.FC = () => {
   const [myBookings, setMyBookings] = useState<BookingType[]>([]);
   const [isLoadingMyBookings, setIsLoadingMyBookings] = useState(true);
 
-  // Fetch ALL bookings for the calendar
+  // Fetch ALL bookings (using a simplified view or specific fields for privacy)
   const fetchGlobalAvailability = async () => {
     setIsLoadingGlobal(true);
     try {
@@ -50,7 +50,7 @@ const Booking: React.FC = () => {
     }
   };
 
-  // Fetch only the logged-in user's bookings
+  // Fetch personal stay history for the logged-in user
   const fetchMyBookings = async () => {
     if (!user) return;
     setIsLoadingMyBookings(true);
@@ -64,7 +64,7 @@ const Booking: React.FC = () => {
       if (error) throw error;
       setMyBookings(data || []);
     } catch (err) {
-      console.error('Error fetching personal history:', err);
+      console.error('Error fetching stay history:', err);
     } finally {
       setIsLoadingMyBookings(false);
     }
@@ -88,11 +88,11 @@ const Booking: React.FC = () => {
         throw new Error("Check-out date must be after check-in date.");
       }
 
-      // Final collision check
+      // Final collision check to prevent race conditions
       let current = new Date(checkInDate);
       while (current <= checkOutDate) {
         if (globalBookedDates.has(current.toISOString().split('T')[0])) {
-          throw new Error("Oops! One or more of those dates just got booked. Please check the calendar.");
+          throw new Error("One or more of your selected dates are no longer available. Please refresh the calendar.");
         }
         current.setDate(current.getDate() + 1);
       }
@@ -105,7 +105,7 @@ const Booking: React.FC = () => {
 
       setStatus({ 
         type: 'success', 
-        message: "Howdy! Your reservation request was successful. Check your email for details." 
+        message: "Success! We've received your reservation. A confirmation email has been sent to your inbox." 
       });
       
       setFormData({ 
@@ -118,12 +118,12 @@ const Booking: React.FC = () => {
         user_id: user?.id || '' 
       });
       
-      // Refresh both views
+      // Update the UI
       await Promise.all([fetchGlobalAvailability(), fetchMyBookings()]);
     } catch (err: any) {
       setStatus({ 
         type: 'error', 
-        message: err.message || "Reservation failed. Please try again or call (432) 555-0123." 
+        message: err.message || "Something went wrong. Please try again or call our office." 
       });
     } finally {
       setIsSubmitting(false);
@@ -136,14 +136,17 @@ const Booking: React.FC = () => {
         <div className="flex flex-col lg:flex-row gap-12">
           
           <div className="flex-grow space-y-8">
+            {/* Main Reservation Form */}
             <div className="bg-white p-8 md:p-12 rounded-[2.5rem] shadow-xl border border-stone-100">
-              <div className="flex items-center space-x-4 mb-2">
+              <div className="flex items-center space-x-4 mb-4">
                 <div className="w-12 h-12 bg-emerald-100 text-emerald-700 rounded-2xl flex items-center justify-center">
-                  <i className="fa-solid fa-caravan text-xl"></i>
+                  <i className="fa-solid fa-calendar-plus text-xl"></i>
                 </div>
-                <h1 className="text-4xl font-bold text-stone-800 tracking-tight">Reserve Your Site</h1>
+                <div>
+                  <h1 className="text-3xl font-bold text-stone-800 tracking-tight">New Reservation</h1>
+                  <p className="text-sm text-stone-400">Secure your spot in the high desert</p>
+                </div>
               </div>
-              <p className="text-stone-500 mb-10 max-w-xl">Join us in the high desert. Please check the calendar for live availability before picking your dates.</p>
               
               {status && (
                 <div className={`mb-8 p-5 rounded-2xl flex items-start space-x-4 animate-in fade-in slide-in-from-top-4 duration-500 ${
@@ -151,7 +154,7 @@ const Booking: React.FC = () => {
                 }`}>
                   <i className={`fa-solid ${status.type === 'success' ? 'fa-circle-check' : 'fa-triangle-exclamation'} mt-1`}></i>
                   <div>
-                    <p className="font-bold text-sm">{status.type === 'success' ? 'Stay Confirmed' : 'Booking Issue'}</p>
+                    <p className="font-bold text-sm">{status.type === 'success' ? 'Stay Booked' : 'Booking Error'}</p>
                     <p className="text-xs opacity-80 mt-1">{status.message}</p>
                   </div>
                 </div>
@@ -160,18 +163,18 @@ const Booking: React.FC = () => {
               <form onSubmit={handleSubmit} className="space-y-8">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   <div className="space-y-2">
-                    <label className="block text-[10px] font-black text-stone-400 uppercase tracking-widest">Primary Guest Name</label>
+                    <label className="block text-[10px] font-black text-stone-400 uppercase tracking-widest">Primary Occupant</label>
                     <input 
                       type="text" 
                       required 
-                      placeholder="e.g. Sarah West"
-                      className="w-full bg-stone-50 border border-stone-200 rounded-2xl px-5 py-4 outline-none focus:ring-2 focus:ring-emerald-500 transition-all placeholder:text-stone-300"
+                      placeholder="Full legal name"
+                      className="w-full bg-stone-50 border border-stone-200 rounded-2xl px-5 py-4 outline-none focus:ring-2 focus:ring-emerald-500 transition-all"
                       value={formData.name}
                       onChange={(e) => setFormData({...formData, name: e.target.value})}
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="block text-[10px] font-black text-stone-400 uppercase tracking-widest">Account Email</label>
+                    <label className="block text-[10px] font-black text-stone-400 uppercase tracking-widest">Confirmation Email</label>
                     <input 
                       type="email" 
                       disabled
@@ -183,20 +186,22 @@ const Booking: React.FC = () => {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   <div className="space-y-2">
-                    <label className="block text-[10px] font-black text-stone-400 uppercase tracking-widest">Check-In Date</label>
+                    <label className="block text-[10px] font-black text-stone-400 uppercase tracking-widest">Arrival Date</label>
                     <input 
                       type="date" 
                       required 
+                      min={new Date().toISOString().split('T')[0]}
                       className="w-full bg-stone-50 border border-stone-200 rounded-2xl px-5 py-4 outline-none focus:ring-2 focus:ring-emerald-500"
                       value={formData.check_in}
                       onChange={(e) => setFormData({...formData, check_in: e.target.value})}
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="block text-[10px] font-black text-stone-400 uppercase tracking-widest">Check-Out Date</label>
+                    <label className="block text-[10px] font-black text-stone-400 uppercase tracking-widest">Departure Date</label>
                     <input 
                       type="date" 
                       required 
+                      min={formData.check_in || new Date().toISOString().split('T')[0]}
                       className="w-full bg-stone-50 border border-stone-200 rounded-2xl px-5 py-4 outline-none focus:ring-2 focus:ring-emerald-500"
                       value={formData.check_out}
                       onChange={(e) => setFormData({...formData, check_out: e.target.value})}
@@ -206,7 +211,7 @@ const Booking: React.FC = () => {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   <div className="space-y-2">
-                    <label className="block text-[10px] font-black text-stone-400 uppercase tracking-widest">RV Type & Length</label>
+                    <label className="block text-[10px] font-black text-stone-400 uppercase tracking-widest">RV Type</label>
                     <select 
                       className="w-full bg-stone-50 border border-stone-200 rounded-2xl px-5 py-4 outline-none focus:ring-2 focus:ring-emerald-500 appearance-none"
                       value={formData.rv_size}
@@ -214,15 +219,15 @@ const Booking: React.FC = () => {
                     >
                       <option value="standard">Standard Back-In (up to 30ft)</option>
                       <option value="large">Large Back-In (30ft - 45ft)</option>
-                      <option value="premium">Premium Pull-Through (All Sizes)</option>
+                      <option value="premium">Premium Pull-Through (Big Rig Friendly)</option>
                     </select>
                   </div>
                   <div className="space-y-2">
-                    <label className="block text-[10px] font-black text-stone-400 uppercase tracking-widest">Number of Guests</label>
+                    <label className="block text-[10px] font-black text-stone-400 uppercase tracking-widest">Total Guests</label>
                     <input 
                       type="number" 
                       min="1" 
-                      max="8"
+                      max="10"
                       className="w-full bg-stone-50 border border-stone-200 rounded-2xl px-5 py-4 outline-none focus:ring-2 focus:ring-emerald-500"
                       value={formData.guests}
                       onChange={(e) => setFormData({...formData, guests: parseInt(e.target.value) || 1})}
@@ -233,60 +238,56 @@ const Booking: React.FC = () => {
                 <button 
                   type="submit" 
                   disabled={isSubmitting}
-                  className="w-full bg-stone-900 text-white py-5 rounded-2xl font-bold hover:bg-emerald-700 transition-all shadow-xl hover:shadow-emerald-900/20 disabled:opacity-50 flex items-center justify-center space-x-3 group"
+                  className="w-full bg-emerald-700 text-white py-5 rounded-2xl font-bold hover:bg-emerald-800 transition-all shadow-xl hover:shadow-emerald-900/20 disabled:opacity-50 flex items-center justify-center space-x-3"
                 >
                   {isSubmitting ? (
-                    <>
-                      <i className="fa-solid fa-spinner animate-spin"></i>
-                      <span>Confirming Dates...</span>
-                    </>
+                    <><i className="fa-solid fa-spinner animate-spin"></i><span>Validating Dates...</span></>
                   ) : (
-                    <>
-                      <i className="fa-solid fa-check text-xs group-hover:scale-125 transition-transform"></i>
-                      <span>Book My Desert Sanctuary</span>
-                    </>
+                    <><i className="fa-solid fa-check-circle"></i><span>Complete Reservation</span></>
                   )}
                 </button>
               </form>
             </div>
 
+            {/* Personalized Guest Dashboard (My Bookings) */}
             <div className="bg-white p-8 md:p-12 rounded-[2.5rem] shadow-xl border border-stone-100">
               <div className="flex justify-between items-center mb-8">
-                <h2 className="text-2xl font-bold text-stone-800 flex items-center">
-                  <i className="fa-solid fa-clock-rotate-left mr-4 text-emerald-600"></i>
-                  My Stays
-                </h2>
+                <div>
+                  <h2 className="text-2xl font-bold text-stone-800">Your Stay History</h2>
+                  <p className="text-xs text-stone-400 mt-1">Manage and view your upcoming West Texas trips</p>
+                </div>
                 <button onClick={fetchMyBookings} className="text-stone-300 hover:text-emerald-600 transition-colors">
-                  <i className="fa-solid fa-rotate-right text-sm"></i>
+                  <i className="fa-solid fa-arrows-rotate text-sm"></i>
                 </button>
               </div>
 
               {isLoadingMyBookings ? (
                 <div className="space-y-4">
-                  {[1, 2].map(i => <div key={i} className="h-24 bg-stone-50 rounded-3xl animate-pulse border border-stone-100"></div>)}
+                  {[1, 2].map(i => <div key={i} className="h-28 bg-stone-50 rounded-3xl animate-pulse"></div>)}
                 </div>
               ) : myBookings.length > 0 ? (
                 <div className="space-y-4">
                   {myBookings.map((b) => (
-                    <div key={b.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-6 rounded-[1.5rem] border border-stone-100 bg-stone-50/30 hover:bg-white transition-all hover:shadow-lg group">
+                    <div key={b.id} className="p-6 rounded-3xl border border-stone-100 bg-stone-50/30 hover:bg-white transition-all hover:shadow-md flex flex-col md:flex-row md:items-center justify-between gap-6">
                       <div className="flex items-center space-x-5">
-                        <div className="w-14 h-14 bg-emerald-600 text-white rounded-2xl flex flex-col items-center justify-center shadow-lg shadow-emerald-900/10">
+                        <div className="w-16 h-16 bg-emerald-600 text-white rounded-2xl flex flex-col items-center justify-center shadow-lg shadow-emerald-900/10">
                           <span className="text-[10px] font-black uppercase leading-none">{new Date(b.check_in).toLocaleString('default', { month: 'short' })}</span>
-                          <span className="text-xl font-black leading-none mt-1">{new Date(b.check_in).getDate() + 1}</span>
+                          <span className="text-2xl font-black leading-none mt-1">{new Date(b.check_in).getDate() + 1}</span>
                         </div>
                         <div>
-                          <p className="font-bold text-stone-800 leading-tight">Mountain Escape</p>
-                          <p className="text-[11px] text-stone-400 font-medium mt-1">
-                            {new Date(b.check_in).toLocaleDateString()} — {new Date(b.check_out).toLocaleDateString()}
-                          </p>
+                          <p className="font-bold text-stone-800 text-lg">Mountain View Stay</p>
+                          <div className="flex items-center space-x-2 text-[11px] text-stone-400 font-medium mt-0.5">
+                            <i className="fa-solid fa-calendar-day"></i>
+                            <span>{new Date(b.check_in).toLocaleDateString()} — {new Date(b.check_out).toLocaleDateString()}</span>
+                          </div>
                         </div>
                       </div>
-                      <div className="mt-5 sm:mt-0 flex items-center justify-between sm:justify-end space-x-8">
-                        <div className="text-right hidden sm:block">
-                          <p className="text-[9px] text-stone-400 font-black uppercase tracking-widest">{b.rv_size}</p>
-                          <p className="text-[11px] text-stone-500 mt-0.5">{b.guests} Guests</p>
+                      <div className="flex items-center justify-between md:justify-end space-x-8 border-t md:border-t-0 pt-4 md:pt-0 border-stone-100">
+                        <div className="text-left md:text-right">
+                          <p className="text-[9px] text-stone-400 font-black uppercase tracking-widest mb-0.5">Setup Details</p>
+                          <p className="text-[11px] text-stone-600 font-bold">{b.rv_size} RV • {b.guests} {b.guests === 1 ? 'Guest' : 'Guests'}</p>
                         </div>
-                        <span className="px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest bg-emerald-50 text-emerald-700 border border-emerald-100">
+                        <span className="px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest bg-emerald-50 text-emerald-700 border border-emerald-100 shadow-sm">
                           Confirmed
                         </span>
                       </div>
@@ -295,9 +296,9 @@ const Booking: React.FC = () => {
                 </div>
               ) : (
                 <div className="text-center py-20 border-2 border-dashed border-stone-100 rounded-[2.5rem]">
-                  <i className="fa-solid fa-van-shuttle text-stone-200 text-4xl mb-4"></i>
-                  <p className="text-stone-400 font-bold">No reservations found yet.</p>
-                  <p className="text-stone-300 text-[11px] mt-1">Pick your dates and join the adventure!</p>
+                  <i className="fa-solid fa-map-location-dot text-stone-200 text-5xl mb-4"></i>
+                  <p className="text-stone-400 font-bold">You haven't booked any stays yet.</p>
+                  <p className="text-stone-300 text-[11px] mt-1">Ready to start your desert journey?</p>
                 </div>
               )}
             </div>
@@ -306,46 +307,23 @@ const Booking: React.FC = () => {
           <aside className="w-full lg:w-[420px] space-y-8">
             <AvailabilityCalendar bookedDates={globalBookedDates} isLoading={isLoadingGlobal} />
             
-            <div className="bg-emerald-900 text-white p-10 rounded-[2.5rem] shadow-2xl relative overflow-hidden group">
-              <i className="fa-solid fa-sun absolute -bottom-10 -right-10 text-white/5 text-[12rem] transform group-hover:rotate-90 transition-transform duration-1000"></i>
-              <h3 className="text-2xl font-bold mb-8 relative z-10">West Texas Value</h3>
+            <div className="bg-emerald-900 text-white p-10 rounded-[2.5rem] shadow-2xl relative overflow-hidden">
+              <i className="fa-solid fa-mountain absolute -bottom-10 -right-10 text-white/5 text-[15rem] transform rotate-12"></i>
+              <h3 className="text-2xl font-bold mb-8 relative z-10">Best Rates in Van Horn</h3>
               <div className="space-y-6 relative z-10">
                 <div className="flex justify-between items-end border-b border-white/10 pb-4">
-                  <div>
-                    <span className="text-emerald-400 text-[10px] font-black uppercase tracking-widest block mb-1">Standard Rate</span>
-                    <span className="text-stone-400 text-sm">Nightly Site Fee</span>
-                  </div>
+                  <span className="text-stone-400 text-sm">Nightly Site Fee</span>
                   <span className="font-bold text-2xl">$45.00</span>
                 </div>
                 <div className="flex justify-between items-end border-b border-white/10 pb-4">
-                  <div>
-                    <span className="text-emerald-400 text-[10px] font-black uppercase tracking-widest block mb-1">Weekly Special</span>
-                    <span className="text-stone-400 text-sm">7 Days / 6 Nights</span>
-                  </div>
+                  <span className="text-stone-400 text-sm">Weekly Special</span>
                   <span className="font-bold text-2xl">$275.00</span>
                 </div>
                 <div className="flex justify-between items-end">
-                  <div>
-                    <span className="text-amber-400 text-[10px] font-black uppercase tracking-widest block mb-1">Monthly Oasis</span>
-                    <span className="text-stone-400 text-sm">Extended Stays</span>
-                  </div>
+                  <span className="text-stone-400 text-sm">Monthly Oasis</span>
                   <span className="font-bold text-2xl text-emerald-400">$750.00</span>
                 </div>
               </div>
-            </div>
-
-            <div className="bg-white p-10 rounded-[2.5rem] border border-stone-200 shadow-sm">
-              <h4 className="font-bold text-stone-800 text-lg mb-4">Need Help?</h4>
-              <p className="text-sm text-stone-500 leading-relaxed mb-8">Our local team in Van Horn can assist with group bookings or specific site requests.</p>
-              <a href="tel:4325550123" className="flex items-center space-x-4 bg-stone-50 p-4 rounded-2xl hover:bg-emerald-50 transition-colors group">
-                <div className="w-12 h-12 bg-white rounded-xl shadow-sm flex items-center justify-center text-emerald-700 group-hover:scale-110 transition-transform">
-                  <i className="fa-solid fa-phone-volume"></i>
-                </div>
-                <div>
-                  <p className="text-[10px] text-stone-400 font-black uppercase tracking-widest">Direct Line</p>
-                  <p className="font-bold text-stone-800">(432) 555-0123</p>
-                </div>
-              </a>
             </div>
           </aside>
 
