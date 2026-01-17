@@ -1,9 +1,12 @@
 
 import React, { useState } from 'react';
 import { supabase } from '../lib/supabase';
+import { useAuth } from '../context/AuthContext';
 import { Booking as BookingType } from '../types/database';
+import AvailabilityCalendar from '../components/AvailabilityCalendar';
 
 const Booking: React.FC = () => {
+  const { user } = useAuth();
   const [formData, setFormData] = useState<Omit<BookingType, 'id' | 'created_at'>>({
     name: '',
     email: '',
@@ -11,6 +14,7 @@ const Booking: React.FC = () => {
     check_out: '',
     rv_size: 'standard',
     guests: 2,
+    user_id: '',
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [status, setStatus] = useState<{ type: 'success' | 'error', message: string } | null>(null);
@@ -21,22 +25,27 @@ const Booking: React.FC = () => {
     setStatus(null);
     
     try {
+      const payload = { 
+        ...formData, 
+        user_id: user?.id || null 
+      };
+
       const { error } = await supabase
         .from('bookings')
-        .insert([formData]);
+        .insert([payload]);
 
       if (error) throw error;
 
       setStatus({ 
         type: 'success', 
-        message: "Howdy! Your reservation request was sent successfully. We'll be in touch soon." 
+        message: "Howdy! Your reservation request was sent. A confirmation email is on its way!" 
       });
-      setFormData({ name: '', email: '', check_in: '', check_out: '', rv_size: 'standard', guests: 2 });
+      setFormData({ name: '', email: '', check_in: '', check_out: '', rv_size: 'standard', guests: 2, user_id: '' });
     } catch (err: any) {
       console.error('Booking Error:', err);
       setStatus({ 
         type: 'error', 
-        message: "The stars aren't aligning right now. We've logged your request locally, but please give us a call at (432) 555-0123 to confirm." 
+        message: "The stars aren't aligning right now. Please call us at (432) 555-0123 to confirm." 
       });
     } finally {
       setIsSubmitting(false);
@@ -48,149 +57,122 @@ const Booking: React.FC = () => {
       <div className="max-w-7xl mx-auto">
         <div className="flex flex-col lg:flex-row gap-12">
           
-          {/* Reservation Form */}
-          <div className="flex-grow bg-white p-8 md:p-12 rounded-3xl shadow-xl border border-stone-100 h-fit">
-            <h1 className="text-4xl font-bold text-stone-800 mb-2">Check Availability</h1>
-            <p className="text-stone-500 mb-10">Select your dates to see our current openings.</p>
-            
-            {status && (
-              <div className={`mb-8 p-4 rounded-xl flex items-center space-x-3 animate-in fade-in slide-in-from-top-2 duration-300 ${
-                status.type === 'success' ? 'bg-emerald-50 text-emerald-800 border border-emerald-100' : 'bg-amber-50 text-amber-800 border border-amber-100'
-              }`}>
-                <i className={`fa-solid ${status.type === 'success' ? 'fa-circle-check' : 'fa-triangle-exclamation'}`}></i>
-                <p className="text-sm font-medium">{status.message}</p>
-              </div>
-            )}
+          <div className="flex-grow space-y-8">
+            <div className="bg-white p-8 md:p-12 rounded-3xl shadow-xl border border-stone-100">
+              <h1 className="text-4xl font-bold text-stone-800 mb-2">Check Availability</h1>
+              <p className="text-stone-500 mb-10">Select your dates to see our current openings.</p>
+              
+              {status && (
+                <div className={`mb-8 p-4 rounded-xl flex items-center space-x-3 animate-in fade-in slide-in-from-top-2 duration-300 ${
+                  status.type === 'success' ? 'bg-emerald-50 text-emerald-800 border border-emerald-100' : 'bg-amber-50 text-amber-800 border border-amber-100'
+                }`}>
+                  <i className={`fa-solid ${status.type === 'success' ? 'fa-circle-check' : 'fa-triangle-exclamation'}`}></i>
+                  <p className="text-sm font-medium">{status.message}</p>
+                </div>
+              )}
 
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-sm font-bold text-stone-700 mb-2">Your Name</label>
-                  <input 
-                    type="text" 
-                    required 
-                    placeholder="John Doe"
-                    className="w-full bg-stone-50 border border-stone-200 rounded-xl px-4 py-3 focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
-                    value={formData.name}
-                    onChange={(e) => setFormData({...formData, name: e.target.value})}
-                  />
+              <form onSubmit={handleSubmit} className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-bold text-stone-700 mb-2">Your Name</label>
+                    <input 
+                      type="text" 
+                      required 
+                      className="w-full bg-stone-50 border border-stone-200 rounded-xl px-4 py-3 outline-none"
+                      value={formData.name}
+                      onChange={(e) => setFormData({...formData, name: e.target.value})}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-bold text-stone-700 mb-2">Email Address</label>
+                    <input 
+                      type="email" 
+                      required 
+                      className="w-full bg-stone-50 border border-stone-200 rounded-xl px-4 py-3 outline-none"
+                      value={formData.email}
+                      onChange={(e) => setFormData({...formData, email: e.target.value})}
+                    />
+                  </div>
                 </div>
-                <div>
-                  <label className="block text-sm font-bold text-stone-700 mb-2">Email Address</label>
-                  <input 
-                    type="email" 
-                    required 
-                    placeholder="john@example.com"
-                    className="w-full bg-stone-50 border border-stone-200 rounded-xl px-4 py-3 focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
-                    value={formData.email}
-                    onChange={(e) => setFormData({...formData, email: e.target.value})}
-                  />
-                </div>
-              </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-sm font-bold text-stone-700 mb-2">Check-In</label>
-                  <input 
-                    type="date" 
-                    required 
-                    className="w-full bg-stone-50 border border-stone-200 rounded-xl px-4 py-3 focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
-                    value={formData.check_in}
-                    onChange={(e) => setFormData({...formData, check_in: e.target.value})}
-                  />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-bold text-stone-700 mb-2">Check-In</label>
+                    <input 
+                      type="date" 
+                      required 
+                      className="w-full bg-stone-50 border border-stone-200 rounded-xl px-4 py-3 outline-none"
+                      value={formData.check_in}
+                      onChange={(e) => setFormData({...formData, check_in: e.target.value})}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-bold text-stone-700 mb-2">Check-Out</label>
+                    <input 
+                      type="date" 
+                      required 
+                      className="w-full bg-stone-50 border border-stone-200 rounded-xl px-4 py-3 outline-none"
+                      value={formData.check_out}
+                      onChange={(e) => setFormData({...formData, check_out: e.target.value})}
+                    />
+                  </div>
                 </div>
-                <div>
-                  <label className="block text-sm font-bold text-stone-700 mb-2">Check-Out</label>
-                  <input 
-                    type="date" 
-                    required 
-                    className="w-full bg-stone-50 border border-stone-200 rounded-xl px-4 py-3 focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
-                    value={formData.check_out}
-                    onChange={(e) => setFormData({...formData, check_out: e.target.value})}
-                  />
-                </div>
-              </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-sm font-bold text-stone-700 mb-2">RV Size/Type</label>
-                  <select 
-                    className="w-full bg-stone-50 border border-stone-200 rounded-xl px-4 py-3 focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
-                    value={formData.rv_size}
-                    onChange={(e) => setFormData({...formData, rv_size: e.target.value})}
-                  >
-                    <option value="standard">Standard (up to 30ft)</option>
-                    <option value="large">Large (30ft - 45ft)</option>
-                    <option value="premium">Premium/Pull-Through</option>
-                  </select>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-bold text-stone-700 mb-2">RV Size</label>
+                    <select 
+                      className="w-full bg-stone-50 border border-stone-200 rounded-xl px-4 py-3 outline-none"
+                      value={formData.rv_size}
+                      onChange={(e) => setFormData({...formData, rv_size: e.target.value})}
+                    >
+                      <option value="standard">Standard</option>
+                      <option value="large">Large</option>
+                      <option value="premium">Premium Pull-Through</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-bold text-stone-700 mb-2">Guests</label>
+                    <input 
+                      type="number" 
+                      min="1" 
+                      className="w-full bg-stone-50 border border-stone-200 rounded-xl px-4 py-3 outline-none"
+                      value={formData.guests}
+                      onChange={(e) => setFormData({...formData, guests: parseInt(e.target.value) || 1})}
+                    />
+                  </div>
                 </div>
-                <div>
-                  <label className="block text-sm font-bold text-stone-700 mb-2">Number of Guests</label>
-                  <input 
-                    type="number" 
-                    min="1" 
-                    max="8" 
-                    className="w-full bg-stone-50 border border-stone-200 rounded-xl px-4 py-3 focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
-                    value={formData.guests}
-                    onChange={(e) => setFormData({...formData, guests: parseInt(e.target.value) || 1})}
-                  />
-                </div>
-              </div>
 
-              <button 
-                type="submit" 
-                disabled={isSubmitting}
-                className="w-full bg-emerald-700 text-white py-4 rounded-xl font-bold text-lg hover:bg-emerald-800 transition-all shadow-lg disabled:opacity-50 flex items-center justify-center space-x-2"
-              >
-                {isSubmitting ? (
-                  <>
-                    <i className="fa-solid fa-spinner animate-spin"></i>
-                    <span>Sending Inquiry...</span>
-                  </>
-                ) : (
-                  <span>Submit Reservation Request</span>
-                )}
-              </button>
-            </form>
-            
-            <p className="mt-8 text-xs text-stone-400 text-center leading-relaxed">
-              * Note: Submitting this form does not guarantee a reservation. Our staff will review your request and contact you via email or phone within 24 hours.
-            </p>
+                <button 
+                  type="submit" 
+                  disabled={isSubmitting}
+                  className="w-full bg-emerald-700 text-white py-4 rounded-xl font-bold hover:bg-emerald-800 disabled:opacity-50"
+                >
+                  {isSubmitting ? <i className="fa-solid fa-spinner animate-spin mr-2"></i> : 'Submit Request'}
+                </button>
+              </form>
+            </div>
+
+            <AvailabilityCalendar />
           </div>
 
-          {/* Pricing/Sidebar */}
           <div className="w-full lg:w-96 space-y-6">
             <div className="bg-emerald-900 text-white p-8 rounded-3xl shadow-xl">
-              <h3 className="text-xl font-bold mb-4">Rates & Discounts</h3>
+              <h3 className="text-xl font-bold mb-4">Pricing</h3>
               <div className="space-y-4">
-                <div className="flex justify-between border-b border-white/10 pb-2">
+                <div className="flex justify-between border-b border-white/10 pb-2 text-sm">
                   <span>Daily Rate</span>
                   <span className="font-bold">$45.00</span>
                 </div>
-                <div className="flex justify-between border-b border-white/10 pb-2">
+                <div className="flex justify-between border-b border-white/10 pb-2 text-sm">
                   <span>Weekly Rate</span>
                   <span className="font-bold">$275.00</span>
                 </div>
-                <div className="flex justify-between">
+                <div className="flex justify-between text-sm">
                   <span>Monthly Rate</span>
                   <span className="font-bold">$750.00</span>
                 </div>
               </div>
-              <div className="mt-8 bg-white/10 p-4 rounded-xl text-xs sm:text-sm">
-                <p>
-                  <i className="fa-solid fa-certificate text-amber-400 mr-2"></i>
-                  We offer 10% off for Good Sam, Military, and AAA members.
-                </p>
-              </div>
-            </div>
-
-            <div className="bg-white p-8 rounded-3xl shadow-xl border border-stone-100">
-              <h3 className="text-stone-800 font-bold mb-4">Need Help?</h3>
-              <p className="text-stone-500 text-sm mb-6">If you have specific questions or need a last-minute same-day booking, give us a call.</p>
-              <a href="tel:4325550123" className="flex items-center space-x-3 text-emerald-700 font-bold hover:underline">
-                <i className="fa-solid fa-phone"></i>
-                <span>(432) 555-0123</span>
-              </a>
             </div>
           </div>
 

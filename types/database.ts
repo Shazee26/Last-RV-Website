@@ -16,14 +16,16 @@ export interface Booking {
   check_out: string;
   rv_size: string;
   guests: number;
+  user_id?: string;
   created_at?: string;
 }
 
 export interface GalleryImage {
-  id: string | number;
+  id?: string | number;
   url: string;
   title: string;
   category: string;
+  user_id?: string;
   created_at?: string;
 }
 

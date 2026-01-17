@@ -1,6 +1,7 @@
 
 import React, { useState } from 'react';
 import { HashRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
+import { AuthProvider, useAuth } from './context/AuthContext';
 import Home from './pages/Home';
 import About from './pages/About';
 import Amenities from './pages/Amenities';
@@ -8,10 +9,12 @@ import Booking from './pages/Booking';
 import Reviews from './pages/Reviews';
 import Gallery from './pages/Gallery';
 import Contact from './pages/Contact';
+import Login from './pages/Login';
 import AIConcierge from './components/AIConcierge';
 
 const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const { user, signOut } = useAuth();
   const location = useLocation();
 
   const navLinks = [
@@ -34,8 +37,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
               <span className="font-bold text-xl tracking-tight text-stone-800">Mountain View RV</span>
             </Link>
             
-            {/* Desktop Navigation */}
-            <div className="hidden md:flex space-x-6">
+            <div className="hidden md:flex items-center space-x-6">
               {navLinks.map((link) => (
                 <Link
                   key={link.path}
@@ -47,6 +49,21 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                   {link.label}
                 </Link>
               ))}
+              
+              <div className="h-4 w-px bg-stone-200"></div>
+
+              {user ? (
+                <div className="flex items-center space-x-4">
+                  <span className="text-xs text-stone-400 font-medium">Hi, {user.email?.split('@')[0]}</span>
+                  <button onClick={signOut} className="text-xs font-bold text-stone-600 hover:text-rose-600 transition-colors">
+                    Logout
+                  </button>
+                </div>
+              ) : (
+                <Link to="/login" className="text-sm font-bold text-emerald-700 hover:text-emerald-800">
+                  Login
+                </Link>
+              )}
             </div>
 
             <Link
@@ -56,7 +73,6 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
               Book Now
             </Link>
 
-            {/* Mobile menu button */}
             <div className="md:hidden">
               <button
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
@@ -68,7 +84,6 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
           </div>
         </div>
 
-        {/* Mobile Navigation */}
         {isMenuOpen && (
           <div className="md:hidden bg-white border-t border-stone-100 animate-in fade-in slide-in-from-top-4 duration-200">
             <div className="px-4 pt-2 pb-6 space-y-2">
@@ -86,6 +101,23 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                   {link.label}
                 </Link>
               ))}
+              {!user && (
+                <Link
+                  to="/login"
+                  onClick={() => setIsMenuOpen(false)}
+                  className="block px-3 py-3 rounded-lg text-base font-medium text-emerald-700"
+                >
+                  Login / Sign Up
+                </Link>
+              )}
+              {user && (
+                <button
+                  onClick={() => { signOut(); setIsMenuOpen(false); }}
+                  className="block w-full text-left px-3 py-3 rounded-lg text-base font-medium text-rose-600"
+                >
+                  Logout
+                </button>
+              )}
               <Link
                 to="/booking"
                 onClick={() => setIsMenuOpen(false)}
@@ -110,7 +142,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
               <span className="font-bold text-xl tracking-tight">Mountain View RV</span>
             </div>
             <p className="text-sm leading-relaxed text-stone-400">
-              Your peaceful desert oasis in the heart of Van Horn, Texas. Experience the majesty of the mountains and the comfort of southern hospitality.
+              Your peaceful desert oasis in the heart of Van Horn, Texas.
             </p>
           </div>
           <div>
@@ -119,19 +151,17 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
               <li><Link to="/" className="hover:text-emerald-400">Home</Link></li>
               <li><Link to="/amenities" className="hover:text-emerald-400">Amenities</Link></li>
               <li><Link to="/booking" className="hover:text-emerald-400">Book A Spot</Link></li>
-              <li><Link to="/gallery" className="hover:text-emerald-400">Gallery</Link></li>
             </ul>
           </div>
           <div>
-            <h4 className="text-white font-semibold mb-4">Contact Us</h4>
+            <h4 className="text-white font-semibold mb-4">Contact</h4>
             <ul className="space-y-2 text-sm">
-              <li><i className="fa-solid fa-location-dot mr-2"></i> Van Horn, TX 79855</li>
-              <li><i className="fa-solid fa-phone mr-2"></i> (432) 555-0123</li>
-              <li><i className="fa-solid fa-envelope mr-2"></i> info@mtnviewrv.com</li>
+              <li>Van Horn, TX 79855</li>
+              <li>(432) 555-0123</li>
             </ul>
           </div>
           <div>
-            <h4 className="text-white font-semibold mb-4">Stay Connected</h4>
+            <h4 className="text-white font-semibold mb-4">Follow Us</h4>
             <div className="flex space-x-4">
               <a href="#" className="w-10 h-10 rounded-full bg-stone-800 flex items-center justify-center hover:bg-emerald-700 transition-colors">
                 <i className="fa-brands fa-facebook-f"></i>
@@ -139,18 +169,14 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
               <a href="#" className="w-10 h-10 rounded-full bg-stone-800 flex items-center justify-center hover:bg-emerald-700 transition-colors">
                 <i className="fa-brands fa-instagram"></i>
               </a>
-              <a href="#" className="w-10 h-10 rounded-full bg-stone-800 flex items-center justify-center hover:bg-emerald-700 transition-colors">
-                <i className="fa-brands fa-tripadvisor"></i>
-              </a>
             </div>
           </div>
         </div>
         <div className="max-w-7xl mx-auto mt-12 pt-8 border-t border-stone-800 text-center text-xs text-stone-500">
-          &copy; {new Date().getFullYear()} Mountain View RV Park. All rights reserved.
+          &copy; {new Date().getFullYear()} Mountain View RV Park.
         </div>
       </footer>
       
-      {/* Floating AI Concierge */}
       <AIConcierge />
     </div>
   );
@@ -158,18 +184,21 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
 export default function App() {
   return (
-    <Router>
-      <Layout>
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/about" element={<About />} />
-          <Route path="/amenities" element={<Amenities />} />
-          <Route path="/booking" element={<Booking />} />
-          <Route path="/reviews" element={<Reviews />} />
-          <Route path="/gallery" element={<Gallery />} />
-          <Route path="/contact" element={<Contact />} />
-        </Routes>
-      </Layout>
-    </Router>
+    <AuthProvider>
+      <Router>
+        <Layout>
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/about" element={<About />} />
+            <Route path="/amenities" element={<Amenities />} />
+            <Route path="/booking" element={<Booking />} />
+            <Route path="/reviews" element={<Reviews />} />
+            <Route path="/gallery" element={<Gallery />} />
+            <Route path="/contact" element={<Contact />} />
+            <Route path="/login" element={<Login />} />
+          </Routes>
+        </Layout>
+      </Router>
+    </AuthProvider>
   );
 }
