@@ -7,6 +7,11 @@ import { GalleryImage } from '../types/database';
 // Curated collection reflecting the specific visuals: Yellow signs, arched entrances, and desert vistas
 const FEATURED_IMAGES: GalleryImage[] = [
   {
+    url: 'https://uvgnawiblpatnqhjeqmc.supabase.co/storage/v1/object/public/Gallery/AIEnhancer_25.png',
+    title: 'Van Horn Dusk Peak',
+    category: 'Sunsets'
+  },
+  {
     url: 'https://images.unsplash.com/photo-1470240731273-7821a6eeb6bd?q=80&w=2070&auto=format&fit=crop',
     title: 'Van Horn Arched Entrance',
     category: 'Facilities'
