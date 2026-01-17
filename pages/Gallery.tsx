@@ -4,6 +4,40 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 import { GalleryImage } from '../types/database';
 
+// Featured images matching the user's provided West Texas sunset aesthetic
+const FEATURED_IMAGES: GalleryImage[] = [
+  {
+    url: 'https://images.unsplash.com/photo-1470240731273-7821a6eeb6bd?q=80&w=2070&auto=format&fit=crop',
+    title: 'Van Horn Golden Hour',
+    category: 'Sunsets'
+  },
+  {
+    url: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?q=80&w=2070&auto=format&fit=crop',
+    title: 'Guadalupe Peak Morning',
+    category: 'Scenery'
+  },
+  {
+    url: 'https://images.unsplash.com/photo-1523987355523-c7b5b0dd90a7?q=80&w=2070&auto=format&fit=crop',
+    title: 'Desert Oasis Setup',
+    category: 'RVs'
+  },
+  {
+    url: 'https://images.unsplash.com/photo-1502082553048-f009c37129b9?q=80&w=2070&auto=format&fit=crop',
+    title: 'Starry Night Over Van Horn',
+    category: 'Scenery'
+  },
+  {
+    url: 'https://images.unsplash.com/photo-1493246507139-91e8bef99c02?q=80&w=2070&auto=format&fit=crop',
+    title: 'Premium Pull-Through View',
+    category: 'Facilities'
+  },
+  {
+    url: 'https://images.unsplash.com/photo-1472214103451-9374bd1c798e?q=80&w=2070&auto=format&fit=crop',
+    title: 'Sierra Blanca Silhouettes',
+    category: 'Sunsets'
+  }
+];
+
 const Gallery: React.FC = () => {
   const { user } = useAuth();
   const [images, setImages] = useState<GalleryImage[]>([]);
@@ -28,9 +62,13 @@ const Gallery: React.FC = () => {
     try {
       const { data, error } = await supabase.from('gallery_images').select('*').order('created_at', { ascending: false });
       if (error) throw error;
-      setImages(data || []);
+      
+      // Combine user-uploaded images with featured placeholders
+      const dbImages = data || [];
+      setImages([...dbImages, ...FEATURED_IMAGES]);
     } catch (err) {
       console.error(err);
+      setImages(FEATURED_IMAGES); // Fallback to featured images on error
     } finally {
       setLoading(false);
     }
@@ -89,17 +127,14 @@ const Gallery: React.FC = () => {
     const filePath = `uploads/${fileName}`;
 
     try {
-      // 1. Upload to Storage (Ensure 'gallery' bucket is public-read)
       const { error: uploadError } = await supabase.storage
         .from('gallery')
         .upload(filePath, selectedFile);
 
       if (uploadError) throw uploadError;
 
-      // 2. Get Public URL
       const { data: { publicUrl } } = supabase.storage.from('gallery').getPublicUrl(filePath);
 
-      // 3. Insert into Database
       const { error: dbError } = await supabase
         .from('gallery_images')
         .insert([{ 
@@ -111,15 +146,12 @@ const Gallery: React.FC = () => {
 
       if (dbError) throw dbError;
 
-      // Reset form
       setUploadTitle("");
       setSelectedFile(null);
       setPreviewUrl(null);
       setStatus({ type: 'success', message: 'Photo shared! Your memory is now on the wall.' });
       
       fetchGallery();
-      
-      // Clear success message after 5 seconds
       setTimeout(() => setStatus(null), 5000);
     } catch (err: any) {
       console.error('Upload Error:', err);
@@ -137,14 +169,15 @@ const Gallery: React.FC = () => {
     <div className="py-20 bg-stone-900 text-white min-h-screen">
       <div className="max-w-7xl mx-auto px-4">
         <div className="text-center mb-16 max-w-2xl mx-auto">
-          <h1 className="text-5xl md:text-6xl font-bold mb-6 tracking-tight">Park Gallery</h1>
+          <span className="text-emerald-500 text-[10px] font-black uppercase tracking-[0.5em] block mb-4">Community Wall</span>
+          <h1 className="text-5xl md:text-7xl font-bold mb-6 tracking-tight">Park Gallery</h1>
           <p className="text-stone-400 text-lg leading-relaxed">
-            From golden hour in Van Horn to the cozy setups of our travelers, catch a glimpse of the Mountain View lifestyle.
+            Catch a glimpse of the Mountain View lifestyle. From our legendary sunsets to the cozy setups of our fellow travelers.
           </p>
         </div>
 
         {user && (
-          <div className="max-w-2xl mx-auto mb-20 p-8 bg-stone-800/50 backdrop-blur-md rounded-[2.5rem] border border-stone-700 shadow-2xl animate-in fade-in slide-in-from-bottom-6 duration-700">
+          <div className="max-w-2xl mx-auto mb-24 p-8 bg-stone-800/50 backdrop-blur-md rounded-[2.5rem] border border-stone-700 shadow-2xl animate-in fade-in slide-in-from-bottom-6 duration-700">
             <div className="flex items-center justify-between mb-8">
               <h4 className="font-bold text-xl flex items-center">
                 <i className="fa-solid fa-camera-retro mr-3 text-emerald-500"></i>
@@ -283,13 +316,14 @@ const Gallery: React.FC = () => {
                 <img 
                   src={img.url} 
                   alt={img.title} 
-                  className="w-full h-auto object-cover opacity-80 group-hover:opacity-100 transition-all duration-500" 
+                  className="w-full h-auto object-cover opacity-90 group-hover:opacity-100 transition-all duration-700 transform group-hover:scale-105" 
                   loading="lazy"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-stone-950 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-all duration-500 p-8 flex flex-col justify-end">
+                <div className="absolute inset-0 bg-gradient-to-t from-stone-950 via-stone-900/20 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-500 p-8 flex flex-col justify-end">
                   <div className="transform translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
                     <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-emerald-400 mb-2 block">{img.category}</span>
-                    <h5 className="text-xl font-bold text-white leading-tight">{img.title}</h5>
+                    <h5 className="text-xl font-bold text-white leading-tight drop-shadow-lg">{img.title}</h5>
+                    <div className="w-8 h-1 bg-emerald-500 mt-3 rounded-full transform scale-x-0 group-hover:scale-x-100 transition-transform origin-left duration-500"></div>
                   </div>
                 </div>
               </div>
