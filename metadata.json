@@ -1,0 +1,7 @@
+{
+  "name": "Mountain View RV Park",
+  "description": "A premium RV park website for Mountain View RV Park in Van Horn, TX, featuring weather forecasts, reviews, a photo gallery, and an AI-powered concierge.",
+  "requestFramePermissions": [
+    "geolocation"
+  ]
+}
