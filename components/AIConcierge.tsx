@@ -25,9 +25,17 @@ const AIConcierge: React.FC = () => {
     setInput('');
     setIsLoading(true);
 
-    const botResponse = await getAIConciergeResponse(userMsg);
-    setMessages(prev => [...prev, { role: 'bot', text: botResponse }]);
-    setIsLoading(false);
+    try {
+      const botResponse = await getAIConciergeResponse(userMsg);
+      // Extra safety check to ensure text is always a string
+      const textResponse = typeof botResponse === 'string' ? botResponse : String(botResponse);
+      setMessages(prev => [...prev, { role: 'bot', text: textResponse }]);
+    } catch (err) {
+      console.error("Chat error:", err);
+      setMessages(prev => [...prev, { role: 'bot', text: "Sorry, I'm having a bit of trouble connecting to the desert air. Try again?" }]);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -39,7 +47,7 @@ const AIConcierge: React.FC = () => {
               <i className="fa-solid fa-hat-cowboy text-xl"></i>
               <span className="font-semibold">Van Horn Concierge</span>
             </div>
-            <button onClick={() => setIsOpen(false)} className="hover:text-stone-200">
+            <button onClick={() => setIsOpen(false)} aria-label="Close Chat" className="hover:text-stone-200">
               <i className="fa-solid fa-xmark text-lg"></i>
             </button>
           </div>
@@ -49,7 +57,7 @@ const AIConcierge: React.FC = () => {
               <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                 <div className={`max-w-[85%] p-3 rounded-2xl text-sm leading-relaxed ${
                   m.role === 'user' 
-                    ? 'bg-emerald-600 text-white rounded-br-none' 
+                    ? 'bg-emerald-600 text-white rounded-br-none shadow-md' 
                     : 'bg-white text-stone-700 shadow-sm border border-stone-100 rounded-bl-none'
                 }`}>
                   {m.text}
@@ -74,13 +82,14 @@ const AIConcierge: React.FC = () => {
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && handleSend()}
+              onKeyDown={(e) => e.key === 'Enter' && handleSend()}
               placeholder="Ask anything..."
               className="flex-grow bg-stone-100 border-none rounded-full px-4 py-2 text-sm focus:ring-2 focus:ring-emerald-500 transition-all outline-none"
             />
             <button
               onClick={handleSend}
-              disabled={isLoading}
+              disabled={isLoading || !input.trim()}
+              aria-label="Send Message"
               className="w-10 h-10 rounded-full bg-emerald-700 text-white flex items-center justify-center hover:bg-emerald-800 transition-colors disabled:opacity-50"
             >
               <i className="fa-solid fa-paper-plane text-xs"></i>
@@ -90,6 +99,7 @@ const AIConcierge: React.FC = () => {
       )}
       <button
         onClick={() => setIsOpen(!isOpen)}
+        aria-label="Toggle AI Concierge"
         className="w-14 h-14 rounded-full bg-emerald-700 text-white flex items-center justify-center shadow-xl hover:bg-emerald-800 transition-all hover:scale-105 active:scale-95"
       >
         <i className={`fa-solid ${isOpen ? 'fa-comments' : 'fa-hat-cowboy'} text-2xl`}></i>

@@ -25,7 +25,6 @@ const Booking: React.FC = () => {
   const [myBookings, setMyBookings] = useState<BookingType[]>([]);
   const [isLoadingMyBookings, setIsLoadingMyBookings] = useState(true);
 
-  // Fetch ALL bookings (using a simplified view or specific fields for privacy)
   const fetchGlobalAvailability = async () => {
     setIsLoadingGlobal(true);
     try {
@@ -50,7 +49,6 @@ const Booking: React.FC = () => {
     }
   };
 
-  // Fetch personal stay history for the logged-in user
   const fetchMyBookings = async () => {
     if (!user) return;
     setIsLoadingMyBookings(true);
@@ -88,11 +86,10 @@ const Booking: React.FC = () => {
         throw new Error("Check-out date must be after check-in date.");
       }
 
-      // Final collision check to prevent race conditions
       let current = new Date(checkInDate);
       while (current <= checkOutDate) {
         if (globalBookedDates.has(current.toISOString().split('T')[0])) {
-          throw new Error("One or more of your selected dates are no longer available. Please refresh the calendar.");
+          throw new Error("One or more of your selected dates are no longer available.");
         }
         current.setDate(current.getDate() + 1);
       }
@@ -105,7 +102,7 @@ const Booking: React.FC = () => {
 
       setStatus({ 
         type: 'success', 
-        message: "Success! We've received your reservation. A confirmation email has been sent to your inbox." 
+        message: "Success! We've received your reservation. See you in the desert soon!" 
       });
       
       setFormData({ 
@@ -118,12 +115,13 @@ const Booking: React.FC = () => {
         user_id: user?.id || '' 
       });
       
-      // Update the UI
       await Promise.all([fetchGlobalAvailability(), fetchMyBookings()]);
     } catch (err: any) {
+      // Ensure error message is a string to avoid [object Object]
+      const msg = err?.message || (typeof err === 'string' ? err : "Something went wrong. Please try again or call our office.");
       setStatus({ 
         type: 'error', 
-        message: err.message || "Something went wrong. Please try again or call our office." 
+        message: msg 
       });
     } finally {
       setIsSubmitting(false);
@@ -136,7 +134,6 @@ const Booking: React.FC = () => {
         <div className="flex flex-col lg:flex-row gap-12">
           
           <div className="flex-grow space-y-8">
-            {/* Main Reservation Form */}
             <div className="bg-white p-8 md:p-12 rounded-[2.5rem] shadow-xl border border-stone-100">
               <div className="flex items-center space-x-4 mb-4">
                 <div className="w-12 h-12 bg-emerald-100 text-emerald-700 rounded-2xl flex items-center justify-center">
@@ -249,14 +246,13 @@ const Booking: React.FC = () => {
               </form>
             </div>
 
-            {/* Personalized Guest Dashboard (My Bookings) */}
             <div className="bg-white p-8 md:p-12 rounded-[2.5rem] shadow-xl border border-stone-100">
               <div className="flex justify-between items-center mb-8">
                 <div>
                   <h2 className="text-2xl font-bold text-stone-800">Your Stay History</h2>
                   <p className="text-xs text-stone-400 mt-1">Manage and view your upcoming West Texas trips</p>
                 </div>
-                <button onClick={fetchMyBookings} className="text-stone-300 hover:text-emerald-600 transition-colors">
+                <button onClick={fetchMyBookings} aria-label="Refresh bookings" className="text-stone-300 hover:text-emerald-600 transition-colors">
                   <i className="fa-solid fa-arrows-rotate text-sm"></i>
                 </button>
               </div>
@@ -271,14 +267,14 @@ const Booking: React.FC = () => {
                     <div key={b.id} className="p-6 rounded-3xl border border-stone-100 bg-stone-50/30 hover:bg-white transition-all hover:shadow-md flex flex-col md:flex-row md:items-center justify-between gap-6">
                       <div className="flex items-center space-x-5">
                         <div className="w-16 h-16 bg-emerald-600 text-white rounded-2xl flex flex-col items-center justify-center shadow-lg shadow-emerald-900/10">
-                          <span className="text-[10px] font-black uppercase leading-none">{new Date(b.check_in).toLocaleString('default', { month: 'short' })}</span>
-                          <span className="text-2xl font-black leading-none mt-1">{new Date(b.check_in).getDate() + 1}</span>
+                          <span className="text-[10px] font-black uppercase leading-none">{new Date(b.check_in + 'T00:00:00').toLocaleString('default', { month: 'short' })}</span>
+                          <span className="text-2xl font-black leading-none mt-1">{new Date(b.check_in + 'T00:00:00').getDate()}</span>
                         </div>
                         <div>
                           <p className="font-bold text-stone-800 text-lg">Mountain View Stay</p>
                           <div className="flex items-center space-x-2 text-[11px] text-stone-400 font-medium mt-0.5">
                             <i className="fa-solid fa-calendar-day"></i>
-                            <span>{new Date(b.check_in).toLocaleDateString()} — {new Date(b.check_out).toLocaleDateString()}</span>
+                            <span>{new Date(b.check_in + 'T00:00:00').toLocaleDateString()} — {new Date(b.check_out + 'T00:00:00').toLocaleDateString()}</span>
                           </div>
                         </div>
                       </div>

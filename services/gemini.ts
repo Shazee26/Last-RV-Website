@@ -1,13 +1,14 @@
 
-import { GoogleGenAI, Type } from "@google/genai";
-
-const API_KEY = process.env.API_KEY || '';
+import { GoogleGenAI } from "@google/genai";
 
 export const getAIConciergeResponse = async (userInput: string) => {
-  if (!API_KEY) return "AI services are currently unavailable. Please contact us via phone.";
+  // Ensure the API key is available via process.env.API_KEY
+  if (!process.env.API_KEY) {
+    return "AI services are currently unavailable. Please contact us via phone.";
+  }
 
   try {
-    const ai = new GoogleGenAI({ apiKey: API_KEY });
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     const response = await ai.models.generateContent({
       model: "gemini-3-flash-preview",
       contents: userInput,
@@ -24,9 +25,16 @@ export const getAIConciergeResponse = async (userInput: string) => {
       },
     });
 
-    return response.text || "I'm sorry, I couldn't process that request right now.";
-  } catch (error) {
+    // Access the .text property directly as per Gemini API guidelines
+    const text = response.text;
+    if (typeof text === 'string' && text.length > 0) {
+      return text;
+    }
+    return "I'm sorry, I couldn't process that request right now. Please try again.";
+  } catch (error: any) {
     console.error("Gemini Error:", error);
-    return "The stars are a bit fuzzy right now! Please try asking again in a moment.";
+    // Ensure we always return a string, never an object, to prevent [object Object] in the UI
+    const errorMessage = error?.message || (typeof error === 'string' ? error : "The stars are a bit fuzzy right now! Please try asking again in a moment.");
+    return errorMessage;
   }
 };
