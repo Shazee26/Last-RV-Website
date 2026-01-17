@@ -31,9 +31,9 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
       <nav className="bg-white/90 backdrop-blur-md sticky top-0 z-50 border-b border-stone-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-20 items-center">
-            <Link to="/" className="flex items-center space-x-2">
-              <i className="fa-solid fa-mountain-sun text-emerald-700 text-3xl"></i>
-              <span className="font-bold text-xl tracking-tight text-stone-800">Mountain View RV</span>
+            <Link to="/" className="flex items-center space-x-3">
+              <i className="fa-solid fa-mountain-sun text-emerald-700 text-4xl"></i>
+              <span className="font-bold text-2xl tracking-tight text-stone-800">Mountain View RV</span>
             </Link>
             
             <div className="hidden md:flex items-center space-x-6">
@@ -136,9 +136,9 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
       <footer className="bg-stone-900 text-stone-300 py-12 px-4">
         <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-8">
           <div className="col-span-1 md:col-span-1">
-            <div className="flex items-center space-x-2 mb-4 text-white">
-              <i className="fa-solid fa-mountain-sun text-emerald-500 text-2xl"></i>
-              <span className="font-bold text-xl tracking-tight">Mountain View RV</span>
+            <div className="flex items-center space-x-3 mb-4 text-white">
+              <i className="fa-solid fa-mountain-sun text-emerald-500 text-3xl"></i>
+              <span className="font-bold text-2xl tracking-tight">Mountain View RV</span>
             </div>
             <p className="text-sm leading-relaxed text-stone-400">
               Your peaceful desert oasis in the heart of Van Horn, Texas.
