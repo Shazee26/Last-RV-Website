@@ -12,33 +12,76 @@ interface WeatherDay {
 const WeatherWidget: React.FC = () => {
   const [forecast, setForecast] = useState<WeatherDay[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const API_KEY = 'YOUR_OPENWEATHER_API_KEY';
+  const CITY = 'Van Horn, TX, US';
 
   useEffect(() => {
-    // Simulated fetch for Van Horn, TX
-    const getMockForecast = () => {
-      const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-      const conditions = ['Sunny', 'Partly Cloudy', 'Clear Skies', 'Light Breeze'];
-      const icons = ['fa-sun', 'fa-cloud-sun', 'fa-wind', 'fa-sun'];
-      
-      const mockData: WeatherDay[] = Array.from({ length: 7 }).map((_, i) => {
-        const d = new Date();
-        d.setDate(d.getDate() + i);
-        return {
-          date: days[d.getDay()],
-          max: 82 + Math.floor(Math.random() * 10),
-          min: 45 + Math.floor(Math.random() * 8),
-          condition: conditions[i % conditions.length],
-          icon: icons[i % icons.length],
-        };
-      });
-      
-      setTimeout(() => {
-        setForecast(mockData);
+    const fetchWeather = async () => {
+      try {
+        setLoading(true);
+        // Using the 5-day / 3-hour forecast API which is available on the free tier.
+        // For a true 10-day forecast, the One Call 3.0 API would be required.
+        const response = await fetch(
+          `https://api.openweathermap.org/data/2.5/forecast?q=${encodeURIComponent(CITY)}&units=imperial&appid=${API_KEY}`
+        );
+
+        if (!response.ok) {
+          throw new Error('Failed to fetch weather data');
+        }
+
+        const data = await response.json();
+        
+        // OpenWeatherMap returns 3-hour chunks. We map them to daily summaries.
+        const dailyData: { [key: string]: { temps: number[], condition: string, icon: string } } = {};
+        
+        data.list.forEach((item: any) => {
+          const date = new Date(item.dt * 1000).toLocaleDateString('en-US', { weekday: 'short' });
+          if (!dailyData[date]) {
+            dailyData[date] = {
+              temps: [],
+              condition: item.weather[0].main,
+              icon: item.weather[0].icon
+            };
+          }
+          dailyData[date].temps.push(item.main.temp);
+        });
+
+        const mappedForecast: WeatherDay[] = Object.keys(dailyData).map(date => {
+          const day = dailyData[date];
+          return {
+            date,
+            max: Math.round(Math.max(...day.temps)),
+            min: Math.round(Math.min(...day.temps)),
+            condition: day.condition,
+            icon: mapIconToFontAwesome(day.icon)
+          };
+        });
+
+        setForecast(mappedForecast);
+        setError(null);
+      } catch (err) {
+        console.error('Weather Fetch Error:', err);
+        setError('Weather data unavailable');
+      } finally {
         setLoading(false);
-      }, 800);
+      }
     };
 
-    getMockForecast();
+    const mapIconToFontAwesome = (iconCode: string) => {
+      // Basic mapping for OpenWeatherMap icons to FontAwesome
+      if (iconCode.startsWith('01')) return 'fa-sun';
+      if (iconCode.startsWith('02')) return 'fa-cloud-sun';
+      if (iconCode.startsWith('03') || iconCode.startsWith('04')) return 'fa-cloud';
+      if (iconCode.startsWith('09') || iconCode.startsWith('10')) return 'fa-cloud-showers-heavy';
+      if (iconCode.startsWith('11')) return 'fa-bolt';
+      if (iconCode.startsWith('13')) return 'fa-snowflake';
+      if (iconCode.startsWith('50')) return 'fa-smog';
+      return 'fa-sun';
+    };
+
+    fetchWeather();
   }, []);
 
   if (loading) {
@@ -49,14 +92,23 @@ const WeatherWidget: React.FC = () => {
     );
   }
 
+  if (error) {
+    return (
+      <div className="text-center py-8 text-stone-400 text-sm">
+        <i className="fa-solid fa-triangle-exclamation mb-2 block text-xl"></i>
+        {error}
+      </div>
+    );
+  }
+
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-4">
+    <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-4">
       {forecast.map((day, idx) => (
-        <div key={idx} className="bg-white p-4 rounded-xl shadow-sm border border-stone-100 text-center transition-transform hover:-translate-y-1">
+        <div key={idx} className="bg-white dark:bg-stone-900 p-4 rounded-xl shadow-sm border border-stone-100 dark:border-stone-800 text-center transition-transform hover:-translate-y-1">
           <p className="text-xs font-bold text-stone-500 uppercase tracking-wider mb-2">{day.date}</p>
           <i className={`fa-solid ${day.icon} text-2xl text-amber-500 mb-2`}></i>
           <div className="flex justify-center items-baseline space-x-1">
-            <span className="text-lg font-bold text-stone-800">{day.max}°</span>
+            <span className="text-lg font-bold text-stone-800 dark:text-stone-100">{day.max}°</span>
             <span className="text-sm text-stone-400">{day.min}°</span>
           </div>
           <p className="text-[10px] mt-1 text-stone-400 font-medium">{day.condition}</p>

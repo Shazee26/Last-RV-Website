@@ -111,6 +111,10 @@ const Gallery: React.FC = () => {
   const categories = ["All", "Scenery", "Facilities", "Sunsets", "RVs"];
   const uploadableCategories = ["Scenery", "Facilities", "Sunsets", "RVs"];
 
+  const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+  const MIN_WIDTH = 400;
+  const MIN_HEIGHT = 400;
+
   const fetchGallery = async (isManualRefresh = false) => {
     if (!isManualRefresh) setLoading(true);
     try {
@@ -122,10 +126,8 @@ const Gallery: React.FC = () => {
       if (error) throw error;
       
       const dbImages = data || [];
-      // Combine user uploads with the featured collection to ensure a populated look
       setImages([...dbImages, ...FEATURED_IMAGES]);
     } catch (err: any) {
-      // Defensive string handling for the error to prevent [object Object]
       const errorMsg = err?.message || (typeof err === 'string' ? err : 'A desert storm briefly blocked the view. Please try again.');
       console.error('Gallery fetch error:', errorMsg);
       setImages(FEATURED_IMAGES);
@@ -138,16 +140,51 @@ const Gallery: React.FC = () => {
     fetchGallery();
   }, []);
 
-  const handleFile = (file: File) => {
-    if (file && file.type.startsWith('image/')) {
-      setSelectedFile(file);
-      setPreviewUrl(URL.createObjectURL(file));
-      if (!uploadTitle) {
-        setUploadTitle(file.name.split('.')[0].replace(/[-_]/g, ' '));
-      }
-      setStatus(null);
-    } else {
-      setStatus({ type: 'error', message: 'Please select a valid image file.' });
+  const validateDimensions = (file: File): Promise<boolean> => {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.src = URL.createObjectURL(file);
+      img.onload = () => {
+        URL.revokeObjectURL(img.src);
+        if (img.width < MIN_WIDTH || img.height < MIN_HEIGHT) {
+          resolve(false);
+        } else {
+          resolve(true);
+        }
+      };
+      img.onerror = () => {
+        URL.revokeObjectURL(img.src);
+        resolve(false);
+      };
+    });
+  };
+
+  const handleFile = async (file: File) => {
+    setStatus(null);
+
+    // Type check
+    if (!file.type.startsWith('image/')) {
+      setStatus({ type: 'error', message: 'Please select a valid image file (PNG, JPG, etc.).' });
+      return;
+    }
+
+    // Size check
+    if (file.size > MAX_FILE_SIZE) {
+      setStatus({ type: 'error', message: `File is too large. Maximum size allowed is 10MB. Your file: ${(file.size / (1024 * 1024)).toFixed(2)}MB` });
+      return;
+    }
+
+    // Dimension check
+    const isValidDimensions = await validateDimensions(file);
+    if (!isValidDimensions) {
+      setStatus({ type: 'error', message: `Image resolution is too low. Minimum required: ${MIN_WIDTH}x${MIN_HEIGHT} pixels.` });
+      return;
+    }
+
+    setSelectedFile(file);
+    setPreviewUrl(URL.createObjectURL(file));
+    if (!uploadTitle) {
+      setUploadTitle(file.name.split('.')[0].replace(/[-_]/g, ' '));
     }
   };
 
@@ -211,10 +248,9 @@ const Gallery: React.FC = () => {
       setPreviewUrl(null);
       setStatus({ 
         type: 'success', 
-        message: 'Success! Refreshing the wall with your new memory...' 
+        message: 'Success! Your memory has been shared with the community.' 
       });
       
-      // Explicitly trigger a refresh to show the new content
       await fetchGallery(true);
       
       setTimeout(() => setStatus(null), 6000);
@@ -232,7 +268,7 @@ const Gallery: React.FC = () => {
     : images.filter(img => img.category === filter);
   
   return (
-    <div className="py-20 bg-stone-900 text-white min-h-screen">
+    <div className="py-20 bg-stone-900 text-white min-h-screen transition-colors duration-300">
       <div className="max-w-7xl mx-auto px-4">
         <div className="text-center mb-16 max-w-2xl mx-auto animate-in fade-in duration-1000">
           <span className="text-emerald-500 text-[10px] font-black uppercase tracking-[0.4em] block mb-4">Mountain View Chronicles</span>
@@ -251,7 +287,7 @@ const Gallery: React.FC = () => {
               </h4>
               <div className="flex items-center space-x-2 bg-stone-900/50 px-3 py-1.5 rounded-full border border-stone-700">
                 <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
-                <span className="text-[9px] font-black uppercase tracking-widest text-stone-500">Connected</span>
+                <span className="text-[9px] font-black uppercase tracking-widest text-stone-500">Secure Upload</span>
               </div>
             </div>
 
@@ -303,15 +339,18 @@ const Gallery: React.FC = () => {
                 onDragLeave={onDragLeave}
                 onDrop={onDrop}
               >
-                <label className="block text-[10px] font-black text-stone-500 uppercase tracking-widest mb-3">Select Image</label>
+                <div className="flex justify-between items-center mb-3">
+                  <label className="block text-[10px] font-black text-stone-500 uppercase tracking-widest">Select Image</label>
+                  <span className="text-[9px] text-stone-600 font-black uppercase tracking-widest">Max 10MB • Min 400px</span>
+                </div>
                 {!previewUrl ? (
                   <label className={`flex flex-col items-center justify-center w-full h-56 transition bg-stone-900/50 border-2 border-stone-700 border-dashed rounded-[2.5rem] cursor-pointer hover:border-emerald-500/50 hover:bg-stone-900 transition-all group ${uploading ? 'opacity-50 cursor-not-allowed' : ''} ${isDragging ? 'border-emerald-500 bg-stone-900 ring-4 ring-emerald-500/10' : ''}`}>
-                    <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                    <div className="flex flex-col items-center justify-center pt-5 pb-6 text-center px-4">
                       <div className="w-14 h-14 rounded-full bg-stone-800 flex items-center justify-center mb-4 text-stone-600 group-hover:text-emerald-500 transition-colors shadow-inner">
                         <i className="fa-solid fa-camera text-xl"></i>
                       </div>
                       <p className="text-sm text-stone-400 font-bold">{isDragging ? 'Release to Upload' : 'Click or drag photo'}</p>
-                      <p className="text-[10px] text-stone-600 mt-2 uppercase tracking-widest">Max file size: 10MB</p>
+                      <p className="text-[10px] text-stone-600 mt-2 uppercase tracking-widest leading-relaxed">JPG, PNG or GIF • High resolution preferred</p>
                     </div>
                     <input 
                       type="file" 
