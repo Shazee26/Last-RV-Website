@@ -28,7 +28,9 @@ const Booking: React.FC = () => {
   const fetchGlobalAvailability = async () => {
     setIsLoadingGlobal(true);
     try {
-      const { data, error } = await supabase.from('bookings').select('check_in, check_out');
+      // We query the 'global_availability' view specifically to bypass RLS 
+      // and see dates blocked by other users without exposing their personal info.
+      const { data, error } = await supabase.from('global_availability' as any).select('*');
       if (error) throw error;
 
       const dates = new Set<string>();
@@ -36,7 +38,10 @@ const Booking: React.FC = () => {
         const start = new Date(booking.check_in + 'T00:00:00');
         const end = new Date(booking.check_out + 'T00:00:00');
         let current = new Date(start);
-        while (current <= end) {
+        
+        // Standard RV park logic: You occupy the night. 
+        // The check-out day (morning) is available for someone else's check-in (afternoon).
+        while (current < end) {
           dates.add(current.toISOString().split('T')[0]);
           current.setDate(current.getDate() + 1);
         }
@@ -82,28 +87,24 @@ const Booking: React.FC = () => {
     const checkInDate = new Date(formData.check_in + 'T00:00:00');
     const checkOutDate = new Date(formData.check_out + 'T00:00:00');
 
-    // Rule 1: Check-in must be before Check-out
     if (checkInDate >= checkOutDate) {
       setStatus({ type: 'error', message: "Departure date must be after the arrival date." });
       return false;
     }
 
-    // Rule 2: At least one selected date is not already present in globalBookedDates
+    // Check for collisions with existing bookings
     const selectedDates: string[] = [];
     let current = new Date(checkInDate);
-    while (current <= checkOutDate) {
+    while (current < checkOutDate) {
       selectedDates.push(current.toISOString().split('T')[0]);
       current.setDate(current.getDate() + 1);
     }
 
-    const hasAvailableDate = selectedDates.some(date => !globalBookedDates.has(date));
-    if (!hasAvailableDate) {
-      setStatus({ type: 'error', message: "The selected period is fully booked. Please try different dates." });
+    const collision = selectedDates.find(date => globalBookedDates.has(date));
+    if (collision) {
+      setStatus({ type: 'error', message: `Site is already reserved for ${new Date(collision + 'T00:00:00').toLocaleDateString()}. Please select different dates.` });
       return false;
     }
-
-    // Although prompt asks for "at least one", a standard booking usually requires ALL dates.
-    // However, I am strictly following the prompt's instruction.
 
     return true;
   };
@@ -138,6 +139,7 @@ const Booking: React.FC = () => {
         user_id: user?.id || '' 
       });
       
+      // Refresh both the global calendar and user history
       await Promise.all([fetchGlobalAvailability(), fetchMyBookings()]);
     } catch (err: any) {
       const msg = err?.message || (typeof err === 'string' ? err : "Something went wrong. Please try again or call our office.");

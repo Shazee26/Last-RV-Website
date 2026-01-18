@@ -21,7 +21,7 @@ const Contact: React.FC = () => {
                 </div>
                 <div>
                   <h4 className="font-bold text-stone-800 mb-1">Our Location</h4>
-                  <p className="text-stone-500">123 Sunset Way, Van Horn, TX 79855</p>
+                  <p className="text-stone-500">810 Frontage Rd, Van Horn, TX 79855</p>
                 </div>
               </div>
               <div className="flex items-start space-x-4">
@@ -30,7 +30,7 @@ const Contact: React.FC = () => {
                 </div>
                 <div>
                   <h4 className="font-bold text-stone-800 mb-1">Phone Number</h4>
-                  <p className="text-stone-500">(432) 555-0123</p>
+                  <p className="text-stone-500">(432) 283-0005</p>
                 </div>
               </div>
               <div className="flex items-start space-x-4">

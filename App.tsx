@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { HashRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
@@ -204,8 +205,8 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
           <div>
             <h4 className="text-white font-semibold mb-4">Contact</h4>
             <ul className="space-y-2 text-sm">
-              <li>Van Horn, TX 79855</li>
-              <li>(432) 555-0123</li>
+              <li>810 Frontage Rd, Van Horn, TX 79855</li>
+              <li>(432) 283-0005</li>
             </ul>
           </div>
           <div>

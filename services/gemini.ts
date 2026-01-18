@@ -15,7 +15,7 @@ export const getAIConciergeResponse = async (userInput: string) => {
       config: {
         systemInstruction: `You are the friendly AI Concierge for Mountain View RV Park in Van Horn, Texas. 
         General Park info: 
-        - Location: Van Horn, TX (West Texas, halfway between El Paso and Fort Stockton).
+        - Location: 810 Frontage Rd, Van Horn, TX 79855 (West Texas, halfway between El Paso and Fort Stockton).
         - Views: Panoramic views of the Guadalupe Mountains and Sierra Blanca.
         - Amenities: 30/50 Amp, Full hookups, High-speed Wi-Fi, Laundry, Pet friendly, Clean showers.
         - Nearby: Guadalupe Mountains National Park (about 1 hour north), McDonald Observatory, Big Bend.
