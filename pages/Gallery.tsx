@@ -62,7 +62,7 @@ const Gallery: React.FC = () => {
       // Combine manual uploads from DB with the specific requested FEATURED_IMAGES
       setImages([...dbImages, ...FEATURED_IMAGES]);
     } catch (err: any) {
-      console.error('Gallery fetch error:', err);
+      console.error('Gallery fetch error:', err?.message || err);
       if (!isManualRefresh) setImages(FEATURED_IMAGES);
     } finally {
       if (!isManualRefresh) setLoading(false);
@@ -180,7 +180,8 @@ const Gallery: React.FC = () => {
       
       setTimeout(() => setStatus(null), 5000);
     } catch (err: any) {
-      setStatus({ type: 'error', message: err.message || 'Operation failed.' });
+      console.error('Gallery upload error:', err?.message || err);
+      setStatus({ type: 'error', message: err?.message || 'Operation failed.' });
     } finally {
       setUploading(false);
     }

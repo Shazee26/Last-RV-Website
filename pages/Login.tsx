@@ -24,17 +24,33 @@ const Login: React.FC = () => {
     setError(null);
     setMessage(null);
 
+    // We explicitly define the redirect URL to current location to avoid Supabase 
+    // defaulting to 'localhost' which causes 'Connection Refused' errors in previews.
+    const redirectUrl = window.location.origin + window.location.pathname;
+
     try {
       if (isForgotPassword) {
         const { error } = await supabase.auth.resetPasswordForEmail(email, {
-          redirectTo: `${window.location.origin}/#/login?reset=true`,
+          redirectTo: `${redirectUrl}#/login?reset=true`,
         });
         if (error) throw error;
         setMessage('Password reset link sent! Please check your email inbox.');
       } else if (isSignUp) {
-        const { error } = await supabase.auth.signUp({ email, password });
+        const { error, data } = await supabase.auth.signUp({ 
+          email, 
+          password,
+          options: {
+            emailRedirectTo: redirectUrl
+          }
+        });
         if (error) throw error;
-        setMessage('Registration successful! Check your email for the confirmation link.');
+        
+        // If session exists immediately, user was auto-confirmed
+        if (data?.session) {
+          navigate(from, { replace: true });
+        } else {
+          setMessage('Registration successful! Please check your email for a confirmation link to activate your account.');
+        }
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
@@ -42,7 +58,8 @@ const Login: React.FC = () => {
         navigate(from, { replace: true });
       }
     } catch (err: any) {
-      setError(err.message);
+      console.error('Auth operation failed:', err);
+      setError(err?.message || 'An unexpected authentication error occurred.');
     } finally {
       setLoading(false);
     }

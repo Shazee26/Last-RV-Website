@@ -25,11 +25,11 @@ const Booking: React.FC = () => {
   const [myBookings, setMyBookings] = useState<BookingType[]>([]);
   const [isLoadingMyBookings, setIsLoadingMyBookings] = useState(true);
 
+  // Fetch all bookings to populate the availability calendar
   const fetchGlobalAvailability = async () => {
     setIsLoadingGlobal(true);
     try {
-      // We query the 'global_availability' view specifically to bypass RLS 
-      // and see dates blocked by other users without exposing their personal info.
+      // 'global_availability' is a view defined in Supabase that returns check_in/check_out dates
       const { data, error } = await supabase.from('global_availability' as any).select('*');
       if (error) throw error;
 
@@ -39,8 +39,6 @@ const Booking: React.FC = () => {
         const end = new Date(booking.check_out + 'T00:00:00');
         let current = new Date(start);
         
-        // Standard RV park logic: You occupy the night. 
-        // The check-out day (morning) is available for someone else's check-in (afternoon).
         while (current < end) {
           dates.add(current.toISOString().split('T')[0]);
           current.setDate(current.getDate() + 1);
@@ -54,6 +52,7 @@ const Booking: React.FC = () => {
     }
   };
 
+  // Fetch only the logged-in user's bookings
   const fetchMyBookings = async () => {
     if (!user) return;
     setIsLoadingMyBookings(true);
@@ -67,9 +66,25 @@ const Booking: React.FC = () => {
       if (error) throw error;
       setMyBookings(data || []);
     } catch (err) {
-      console.error('Error fetching stay history:', err);
+      console.error('Error fetching My Bookings:', err);
     } finally {
       setIsLoadingMyBookings(false);
+    }
+  };
+
+  const handleCancelBooking = async (id: string | number) => {
+    if (!confirm('Are you sure you want to cancel this reservation?')) return;
+    
+    try {
+      const { error } = await supabase.from('bookings').delete().eq('id', id);
+      if (error) throw error;
+      
+      setStatus({ type: 'success', message: 'Reservation cancelled successfully.' });
+      // Refresh both lists
+      await Promise.all([fetchGlobalAvailability(), fetchMyBookings()]);
+    } catch (err: any) {
+      console.error('Cancellation error:', err);
+      setStatus({ type: 'error', message: err.message || 'Failed to cancel reservation.' });
     }
   };
 
@@ -102,7 +117,7 @@ const Booking: React.FC = () => {
 
     const collision = selectedDates.find(date => globalBookedDates.has(date));
     if (collision) {
-      setStatus({ type: 'error', message: `Site is already reserved for ${new Date(collision + 'T00:00:00').toLocaleDateString()}. Please select different dates.` });
+      setStatus({ type: 'error', message: `One or more of your selected dates are already reserved. Please check the calendar.` });
       return false;
     }
 
@@ -112,9 +127,7 @@ const Booking: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setStatus(null);
-
     if (!validateForm()) return;
-
     setIsSubmitting(true);
     
     try {
@@ -126,9 +139,10 @@ const Booking: React.FC = () => {
 
       setStatus({ 
         type: 'success', 
-        message: "Success! We've received your reservation. See you in the desert soon!" 
+        message: "Reservation confirmed! A confirmation email is being sent to your inbox." 
       });
       
+      // Reset form
       setFormData({ 
         name: '', 
         email: user?.email || '', 
@@ -139,14 +153,10 @@ const Booking: React.FC = () => {
         user_id: user?.id || '' 
       });
       
-      // Refresh both the global calendar and user history
+      // Update UI
       await Promise.all([fetchGlobalAvailability(), fetchMyBookings()]);
     } catch (err: any) {
-      const msg = err?.message || (typeof err === 'string' ? err : "Something went wrong. Please try again or call our office.");
-      setStatus({ 
-        type: 'error', 
-        message: msg 
-      });
+      setStatus({ type: 'error', message: err?.message || "Something went wrong. Please try again." });
     } finally {
       setIsSubmitting(false);
     }
@@ -158,8 +168,9 @@ const Booking: React.FC = () => {
         <div className="flex flex-col lg:flex-row gap-12">
           
           <div className="flex-grow space-y-8">
+            {/* New Reservation Form */}
             <div className="bg-white dark:bg-stone-900 p-8 md:p-12 rounded-[2.5rem] shadow-xl border border-stone-100 dark:border-stone-800">
-              <div className="flex items-center space-x-4 mb-4">
+              <div className="flex items-center space-x-4 mb-8">
                 <div className="w-12 h-12 bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400 rounded-2xl flex items-center justify-center">
                   <i className="fa-solid fa-calendar-plus text-xl"></i>
                 </div>
@@ -175,7 +186,7 @@ const Booking: React.FC = () => {
                 }`}>
                   <i className={`fa-solid ${status.type === 'success' ? 'fa-circle-check' : 'fa-triangle-exclamation'} mt-1`}></i>
                   <div>
-                    <p className="font-bold text-sm">{status.type === 'success' ? 'Reservation Update' : 'Validation Error'}</p>
+                    <p className="font-bold text-sm">{status.type === 'success' ? 'Success' : 'Attention'}</p>
                     <p className="text-xs opacity-80 mt-1">{status.message}</p>
                   </div>
                 </div>
@@ -184,18 +195,18 @@ const Booking: React.FC = () => {
               <form onSubmit={handleSubmit} className="space-y-8">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   <div className="space-y-2">
-                    <label className="block text-[10px] font-black text-stone-400 uppercase tracking-widest">Primary Occupant</label>
+                    <label className="block text-[10px] font-black text-stone-400 uppercase tracking-widest">Primary Guest</label>
                     <input 
                       type="text" 
                       required 
-                      placeholder="Full legal name"
+                      placeholder="Your Full Name"
                       className="w-full bg-stone-50 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-2xl px-5 py-4 outline-none focus:ring-2 focus:ring-emerald-500 transition-all dark:text-stone-100"
                       value={formData.name}
                       onChange={(e) => setFormData({...formData, name: e.target.value})}
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="block text-[10px] font-black text-stone-400 uppercase tracking-widest">Confirmation Email</label>
+                    <label className="block text-[10px] font-black text-stone-400 uppercase tracking-widest">Account Email</label>
                     <input 
                       type="email" 
                       disabled
@@ -232,7 +243,7 @@ const Booking: React.FC = () => {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   <div className="space-y-2">
-                    <label className="block text-[10px] font-black text-stone-400 uppercase tracking-widest">RV Type</label>
+                    <label className="block text-[10px] font-black text-stone-400 uppercase tracking-widest">RV Specification</label>
                     <select 
                       className="w-full bg-stone-50 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-2xl px-5 py-4 outline-none focus:ring-2 focus:ring-emerald-500 appearance-none dark:text-stone-100"
                       value={formData.rv_size}
@@ -244,7 +255,7 @@ const Booking: React.FC = () => {
                     </select>
                   </div>
                   <div className="space-y-2">
-                    <label className="block text-[10px] font-black text-stone-400 uppercase tracking-widest">Total Guests</label>
+                    <label className="block text-[10px] font-black text-stone-400 uppercase tracking-widest">Party Size</label>
                     <input 
                       type="number" 
                       min="1" 
@@ -259,94 +270,99 @@ const Booking: React.FC = () => {
                 <button 
                   type="submit" 
                   disabled={isSubmitting}
-                  className="w-full bg-emerald-700 text-white py-5 rounded-2xl font-bold hover:bg-emerald-800 transition-all shadow-xl hover:shadow-emerald-900/20 disabled:opacity-50 flex items-center justify-center space-x-3"
+                  className="w-full bg-emerald-700 text-white py-5 rounded-2xl font-bold hover:bg-emerald-800 transition-all shadow-xl disabled:opacity-50 flex items-center justify-center space-x-3"
                 >
                   {isSubmitting ? (
-                    <><i className="fa-solid fa-spinner animate-spin"></i><span>Processing...</span></>
+                    <><i className="fa-solid fa-spinner animate-spin"></i><span>Confirming...</span></>
                   ) : (
-                    <><i className="fa-solid fa-check-circle"></i><span>Complete Reservation</span></>
+                    <><i className="fa-solid fa-check-circle"></i><span>Book Your Spot</span></>
                   )}
                 </button>
               </form>
             </div>
 
-            <div className="bg-white dark:bg-stone-900 p-8 md:p-12 rounded-[2.5rem] shadow-xl border border-stone-100 dark:border-stone-800">
-              <div className="flex justify-between items-center mb-8">
-                <div>
-                  <h2 className="text-2xl font-bold text-stone-800 dark:text-stone-100">Your Stay History</h2>
-                  <p className="text-xs text-stone-400 mt-1">Manage and view your upcoming West Texas trips</p>
+            {/* My Bookings Section */}
+            {user && (
+              <div className="bg-white dark:bg-stone-900 p-8 md:p-12 rounded-[2.5rem] shadow-xl border border-stone-100 dark:border-stone-800">
+                <div className="flex justify-between items-center mb-8">
+                  <div>
+                    <h2 className="text-2xl font-bold text-stone-800 dark:text-stone-100">My Bookings</h2>
+                    <p className="text-xs text-stone-400 mt-1">Review and manage your West Texas trips</p>
+                  </div>
+                  <button onClick={fetchMyBookings} aria-label="Refresh bookings" className="text-stone-300 hover:text-emerald-600 transition-colors">
+                    <i className="fa-solid fa-arrows-rotate text-sm"></i>
+                  </button>
                 </div>
-                <button onClick={fetchMyBookings} aria-label="Refresh bookings" className="text-stone-300 hover:text-emerald-600 transition-colors">
-                  <i className="fa-solid fa-arrows-rotate text-sm"></i>
-                </button>
-              </div>
 
-              {isLoadingMyBookings ? (
-                <div className="space-y-4">
-                  {[1, 2].map(i => <div key={i} className="h-28 bg-stone-50 dark:bg-stone-800 rounded-3xl animate-pulse"></div>)}
-                </div>
-              ) : myBookings.length > 0 ? (
-                <div className="space-y-4">
-                  {myBookings.map((b) => (
-                    <div key={b.id} className="p-6 rounded-3xl border border-stone-100 dark:border-stone-800 bg-stone-50/30 dark:bg-stone-950/30 hover:bg-white dark:hover:bg-stone-800 transition-all hover:shadow-md flex flex-col md:flex-row md:items-center justify-between gap-6">
-                      <div className="flex items-center space-x-5">
-                        <div className="w-16 h-16 bg-emerald-600 text-white rounded-2xl flex flex-col items-center justify-center shadow-lg shadow-emerald-900/10">
-                          <span className="text-[10px] font-black uppercase leading-none">{new Date(b.check_in + 'T00:00:00').toLocaleString('default', { month: 'short' })}</span>
-                          <span className="text-2xl font-black leading-none mt-1">{new Date(b.check_in + 'T00:00:00').getDate()}</span>
-                        </div>
-                        <div>
-                          <p className="font-bold text-stone-800 dark:text-stone-100 text-lg">Mountain View Stay</p>
-                          <div className="flex items-center space-x-2 text-[11px] text-stone-400 font-medium mt-0.5">
-                            <i className="fa-solid fa-calendar-day"></i>
-                            <span>{new Date(b.check_in + 'T00:00:00').toLocaleDateString()} — {new Date(b.check_out + 'T00:00:00').toLocaleDateString()}</span>
+                {isLoadingMyBookings ? (
+                  <div className="space-y-4">
+                    {[1, 2].map(i => <div key={i} className="h-28 bg-stone-50 dark:bg-stone-800 rounded-3xl animate-pulse"></div>)}
+                  </div>
+                ) : myBookings.length > 0 ? (
+                  <div className="space-y-4">
+                    {myBookings.map((b) => (
+                      <div key={b.id} className="p-6 rounded-3xl border border-stone-100 dark:border-stone-800 bg-stone-50/30 dark:bg-stone-950/30 hover:bg-white dark:hover:bg-stone-800 transition-all hover:shadow-md flex flex-col md:flex-row md:items-center justify-between gap-6">
+                        <div className="flex items-center space-x-5">
+                          <div className="w-16 h-16 bg-emerald-600 text-white rounded-2xl flex flex-col items-center justify-center shadow-lg shadow-emerald-900/10">
+                            <span className="text-[10px] font-black uppercase leading-none">{new Date(b.check_in + 'T00:00:00').toLocaleString('default', { month: 'short' })}</span>
+                            <span className="text-2xl font-black leading-none mt-1">{new Date(b.check_in + 'T00:00:00').getDate()}</span>
+                          </div>
+                          <div>
+                            <p className="font-bold text-stone-800 dark:text-stone-100 text-lg">RV Site Stay</p>
+                            <div className="flex items-center space-x-2 text-[11px] text-stone-400 font-medium mt-0.5">
+                              <i className="fa-solid fa-calendar-day"></i>
+                              <span>{new Date(b.check_in + 'T00:00:00').toLocaleDateString()} — {new Date(b.check_out + 'T00:00:00').toLocaleDateString()}</span>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                      <div className="flex items-center justify-between md:justify-end space-x-8 border-t md:border-t-0 pt-4 md:pt-0 border-stone-100 dark:border-stone-800">
-                        <div className="text-left md:text-right">
-                          <p className="text-[9px] text-stone-400 font-black uppercase tracking-widest mb-0.5">Setup Details</p>
-                          <p className="text-[11px] text-stone-600 dark:text-stone-300 font-bold">{b.rv_size} RV • {b.guests} {b.guests === 1 ? 'Guest' : 'Guests'}</p>
+                        <div className="flex items-center justify-between md:justify-end space-x-8 border-t md:border-t-0 pt-4 md:pt-0 border-stone-100 dark:border-stone-800">
+                          <div className="text-left md:text-right">
+                            <p className="text-[9px] text-stone-400 font-black uppercase tracking-widest mb-0.5">RV Size</p>
+                            <p className="text-[11px] text-stone-600 dark:text-stone-300 font-bold capitalize">{b.rv_size}</p>
+                          </div>
+                          <button 
+                            onClick={() => b.id && handleCancelBooking(b.id)}
+                            className="px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest bg-rose-50 dark:bg-rose-950/30 text-rose-600 hover:bg-rose-600 hover:text-white transition-all border border-rose-100 dark:border-rose-900"
+                          >
+                            Cancel
+                          </button>
                         </div>
-                        <span className="px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-800 shadow-sm">
-                          Confirmed
-                        </span>
                       </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-20 border-2 border-dashed border-stone-100 dark:border-stone-800 rounded-[2.5rem]">
-                  <i className="fa-solid fa-map-location-dot text-stone-200 dark:text-stone-800 text-5xl mb-4"></i>
-                  <p className="text-stone-400 font-bold">You haven't booked any stays yet.</p>
-                  <p className="text-stone-300 dark:text-stone-700 text-[11px] mt-1">Ready to start your desert journey?</p>
-                </div>
-              )}
-            </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-20 border-2 border-dashed border-stone-100 dark:border-stone-800 rounded-[2.5rem]">
+                    <i className="fa-solid fa-map-location-dot text-stone-200 dark:text-stone-800 text-5xl mb-4"></i>
+                    <p className="text-stone-400 font-bold">No active bookings found for your account.</p>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           <aside className="w-full lg:w-[420px] space-y-8">
+            {/* Calendar passed with all booked dates */}
             <AvailabilityCalendar bookedDates={globalBookedDates} isLoading={isLoadingGlobal} />
             
             <div className="bg-emerald-900 text-white p-10 rounded-[2.5rem] shadow-2xl relative overflow-hidden">
               <i className="fa-solid fa-mountain absolute -bottom-10 -right-10 text-white/5 text-[15rem] transform rotate-12"></i>
-              <h3 className="text-2xl font-bold mb-8 relative z-10">Best Rates in Van Horn</h3>
-              <div className="space-y-6 relative z-10">
+              <h3 className="text-2xl font-bold mb-8 relative z-10 text-emerald-300">Park Rates</h3>
+              <div className="space-y-6 relative z-10 font-medium">
                 <div className="flex justify-between items-end border-b border-white/10 pb-4">
-                  <span className="text-stone-400 text-sm">Nightly Site Fee</span>
+                  <span className="text-stone-400 text-sm">Nightly</span>
                   <span className="font-bold text-2xl">$45.00</span>
                 </div>
                 <div className="flex justify-between items-end border-b border-white/10 pb-4">
-                  <span className="text-stone-400 text-sm">Weekly Special</span>
+                  <span className="text-stone-400 text-sm">Weekly</span>
                   <span className="font-bold text-2xl">$275.00</span>
                 </div>
                 <div className="flex justify-between items-end">
-                  <span className="text-stone-400 text-sm">Monthly Oasis</span>
+                  <span className="text-stone-400 text-sm">Monthly</span>
                   <span className="font-bold text-2xl text-emerald-400">$750.00</span>
                 </div>
               </div>
             </div>
           </aside>
-
         </div>
       </div>
     </div>
