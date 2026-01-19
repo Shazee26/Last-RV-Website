@@ -63,9 +63,9 @@ const Gallery: React.FC = () => {
       setImages([...dbImages, ...FEATURED_IMAGES]);
     } catch (err: any) {
       console.error('Gallery fetch error:', err);
-      setImages(FEATURED_IMAGES);
+      if (!isManualRefresh) setImages(FEATURED_IMAGES);
     } finally {
-      setLoading(false);
+      if (!isManualRefresh) setLoading(false);
     }
   };
 
@@ -147,24 +147,37 @@ const Gallery: React.FC = () => {
         throw new Error("Please select a file or provide a valid link.");
       }
 
-      const { error: dbError } = await supabase
+      const { data: insertedData, error: dbError } = await supabase
         .from('gallery_images')
         .insert([{ 
           url: finalUrl, 
           title: uploadTitle || 'Guest Memory', 
           category: uploadCategory,
           user_id: user.id 
-        }]);
+        }])
+        .select();
 
       if (dbError) throw dbError;
 
+      // Optimistically add the new image to the top of the list immediately
+      if (insertedData && insertedData[0]) {
+        setImages(prev => [insertedData[0], ...prev]);
+      }
+
+      // Reset form and UI state
       setUploadTitle("");
       setExternalUrl("");
       setSelectedFile(null);
       setPreviewUrl(null);
+      
+      // Crucial: Reset filter to "All" so the user definitely sees their new image
+      setFilter("All");
+      
       setStatus({ type: 'success', message: 'Memory added successfully!' });
       
-      await fetchGallery(true);
+      // Re-fetch in the background to ensure everything is perfectly in sync
+      fetchGallery(true);
+      
       setTimeout(() => setStatus(null), 5000);
     } catch (err: any) {
       setStatus({ type: 'error', message: err.message || 'Operation failed.' });
