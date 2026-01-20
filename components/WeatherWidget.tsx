@@ -21,7 +21,6 @@ const MOCK_FORECAST: WeatherDay[] = [
 const WeatherWidget: React.FC = () => {
   const [forecast, setForecast] = useState<WeatherDay[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
   const API_KEY = 'YOUR_OPENWEATHER_API_KEY';
   const CITY = 'Van Horn, TX, US';
@@ -30,8 +29,6 @@ const WeatherWidget: React.FC = () => {
     const fetchWeather = async () => {
       try {
         setLoading(true);
-        
-        // If the key is the placeholder, skip fetch and use mocks immediately to avoid errors
         if (API_KEY === 'YOUR_OPENWEATHER_API_KEY') {
            setForecast(MOCK_FORECAST);
            setLoading(false);
@@ -41,23 +38,14 @@ const WeatherWidget: React.FC = () => {
         const response = await fetch(
           `https://api.openweathermap.org/data/2.5/forecast?q=${encodeURIComponent(CITY)}&units=imperial&appid=${API_KEY}`
         );
-
-        if (!response.ok) {
-          throw new Error('Failed to fetch weather data');
-        }
-
+        if (!response.ok) throw new Error('Failed to fetch');
         const data = await response.json();
         
         const dailyData: { [key: string]: { temps: number[], condition: string, icon: string } } = {};
-        
         data.list.forEach((item: any) => {
           const date = new Date(item.dt * 1000).toLocaleDateString('en-US', { weekday: 'short' });
           if (!dailyData[date]) {
-            dailyData[date] = {
-              temps: [],
-              condition: item.weather[0].main,
-              icon: item.weather[0].icon
-            };
+            dailyData[date] = { temps: [], condition: item.weather[0].main, icon: item.weather[0].icon };
           }
           dailyData[date].temps.push(item.main.temp);
         });
@@ -72,13 +60,9 @@ const WeatherWidget: React.FC = () => {
             icon: mapIconToFontAwesome(day.icon)
           };
         });
-
         setForecast(mappedForecast.slice(0, 6));
-        setError(null);
       } catch (err) {
-        console.error('Weather API Error (falling back to mocks):', err);
         setForecast(MOCK_FORECAST);
-        setError(null); 
       } finally {
         setLoading(false);
       }
@@ -90,8 +74,6 @@ const WeatherWidget: React.FC = () => {
       if (iconCode.startsWith('03') || iconCode.startsWith('04')) return 'fa-cloud';
       if (iconCode.startsWith('09') || iconCode.startsWith('10')) return 'fa-cloud-showers-heavy';
       if (iconCode.startsWith('11')) return 'fa-bolt';
-      if (iconCode.startsWith('13')) return 'fa-snowflake';
-      if (iconCode.startsWith('50')) return 'fa-smog';
       return 'fa-sun';
     };
 
@@ -100,23 +82,25 @@ const WeatherWidget: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center py-12">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-700"></div>
+      <div className="flex justify-center items-center py-20">
+        <div className="animate-spin rounded-xl h-12 w-12 border-4 border-emerald-500 border-t-transparent"></div>
       </div>
     );
   }
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-4">
+    <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-6">
       {forecast.map((day, idx) => (
-        <div key={idx} className="bg-white dark:bg-stone-900 p-4 rounded-xl shadow-sm border border-stone-100 dark:border-stone-800 text-center transition-transform hover:-translate-y-1">
-          <p className="text-xs font-bold text-stone-500 uppercase tracking-wider mb-2">{day.date}</p>
-          <i className={`fa-solid ${day.icon} text-2xl text-amber-500 mb-2`}></i>
-          <div className="flex justify-center items-baseline space-x-1">
-            <span className="text-lg font-bold text-stone-800 dark:text-stone-100">{day.max}°</span>
-            <span className="text-sm text-stone-400">{day.min}°</span>
+        <div key={idx} className="group bg-white dark:bg-[#111114] p-8 rounded-[2.5rem] shadow-sm border border-stone-100 dark:border-white/5 text-center transition-all hover:shadow-2xl hover:scale-105 hover:border-emerald-500/30">
+          <p className="text-[10px] font-black text-stone-400 dark:text-stone-500 uppercase tracking-widest mb-6">{day.date}</p>
+          <div className="mb-6 transform group-hover:scale-125 transition-transform duration-500">
+             <i className={`fa-solid ${day.icon} text-4xl ${day.icon === 'fa-sun' ? 'text-orange-500' : 'text-blue-400'} drop-shadow-vibrant`}></i>
           </div>
-          <p className="text-[10px] mt-1 text-stone-400 font-medium">{day.condition}</p>
+          <div className="flex justify-center items-baseline space-x-2">
+            <span className="text-3xl font-black text-stone-900 dark:text-white tracking-tighter">{day.max}°</span>
+            <span className="text-sm font-bold text-stone-400">{day.min}°</span>
+          </div>
+          <p className="text-[8px] mt-4 text-emerald-500 font-black uppercase tracking-widest">{day.condition}</p>
         </div>
       ))}
     </div>

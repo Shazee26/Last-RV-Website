@@ -27,11 +27,9 @@ const AIConcierge: React.FC = () => {
 
     try {
       const botResponse = await getAIConciergeResponse(userMsg);
-      // Extra safety check to ensure text is always a string
       const textResponse = typeof botResponse === 'string' ? botResponse : String(botResponse);
       setMessages(prev => [...prev, { role: 'bot', text: textResponse }]);
     } catch (err) {
-      console.error("Chat error:", err);
       setMessages(prev => [...prev, { role: 'bot', text: "Sorry, I'm having a bit of trouble connecting to the desert air. Try again?" }]);
     } finally {
       setIsLoading(false);
@@ -39,26 +37,34 @@ const AIConcierge: React.FC = () => {
   };
 
   return (
-    <div className="fixed bottom-6 right-6 z-[100] flex flex-col items-end">
+    <div className="fixed bottom-8 right-8 z-[100] flex flex-col items-end">
       {isOpen && (
-        <div className="bg-white w-80 sm:w-96 h-[500px] mb-4 rounded-2xl shadow-2xl border border-stone-200 flex flex-col overflow-hidden animate-in slide-in-from-bottom-4 duration-300">
-          <div className="bg-emerald-700 p-4 text-white flex justify-between items-center">
-            <div className="flex items-center space-x-2">
-              <i className="fa-solid fa-hat-cowboy text-xl"></i>
-              <span className="font-semibold">Van Horn Concierge</span>
+        <div className="bg-white dark:bg-[#0c0c0e] w-80 sm:w-[400px] h-[600px] mb-6 rounded-[2.5rem] shadow-2xl border border-stone-100 dark:border-white/5 flex flex-col overflow-hidden animate-in slide-in-from-bottom-8 duration-500">
+          <div className="vibrant-gradient p-8 text-white flex justify-between items-center relative overflow-hidden">
+            <div className="absolute top-0 right-0 p-8 opacity-10">
+               <i className="fa-solid fa-hat-cowboy text-8xl rotate-12"></i>
             </div>
-            <button onClick={() => setIsOpen(false)} aria-label="Close Chat" className="hover:text-stone-200">
-              <i className="fa-solid fa-xmark text-lg"></i>
+            <div className="flex items-center space-x-4 relative z-10">
+              <div className="w-12 h-12 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center border border-white/20">
+                <i className="fa-solid fa-hat-cowboy text-2xl"></i>
+              </div>
+              <div>
+                <span className="font-black text-sm uppercase tracking-widest block">Van Horn Concierge</span>
+                <span className="text-[10px] font-bold text-white/60">Ready to assist • 24/7</span>
+              </div>
+            </div>
+            <button onClick={() => setIsOpen(false)} aria-label="Close Chat" className="relative z-10 w-8 h-8 rounded-full bg-black/20 hover:bg-black/40 transition-colors flex items-center justify-center">
+              <i className="fa-solid fa-xmark text-sm"></i>
             </button>
           </div>
           
-          <div ref={scrollRef} className="flex-grow overflow-y-auto p-4 space-y-4 bg-stone-50">
+          <div ref={scrollRef} className="flex-grow overflow-y-auto p-6 space-y-6 bg-stone-50 dark:bg-[#0a0a0c]">
             {messages.map((m, i) => (
               <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                <div className={`max-w-[85%] p-3 rounded-2xl text-sm leading-relaxed ${
+                <div className={`max-w-[85%] p-5 rounded-[1.8rem] text-sm leading-relaxed font-medium ${
                   m.role === 'user' 
-                    ? 'bg-emerald-600 text-white rounded-br-none shadow-md' 
-                    : 'bg-white text-stone-700 shadow-sm border border-stone-100 rounded-bl-none'
+                    ? 'vibrant-gradient text-white rounded-br-none shadow-xl shadow-emerald-500/10' 
+                    : 'bg-white dark:bg-[#111114] text-stone-800 dark:text-stone-200 shadow-sm border border-stone-100 dark:border-white/5 rounded-bl-none'
                 }`}>
                   {m.text}
                 </div>
@@ -66,41 +72,39 @@ const AIConcierge: React.FC = () => {
             ))}
             {isLoading && (
               <div className="flex justify-start">
-                <div className="bg-white p-3 rounded-2xl rounded-bl-none shadow-sm border border-stone-100">
-                  <div className="flex space-x-1">
-                    <div className="w-1.5 h-1.5 bg-stone-300 rounded-full animate-bounce"></div>
-                    <div className="w-1.5 h-1.5 bg-stone-300 rounded-full animate-bounce [animation-delay:0.2s]"></div>
-                    <div className="w-1.5 h-1.5 bg-stone-300 rounded-full animate-bounce [animation-delay:0.4s]"></div>
+                <div className="bg-white dark:bg-[#111114] p-5 rounded-[1.8rem] rounded-bl-none border border-stone-100 dark:border-white/5 shadow-sm">
+                  <div className="flex space-x-1.5">
+                    <div className="w-2 h-2 bg-emerald-500 rounded-full animate-bounce"></div>
+                    <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce [animation-delay:0.2s]"></div>
+                    <div className="w-2 h-2 bg-purple-500 rounded-full animate-bounce [animation-delay:0.4s]"></div>
                   </div>
                 </div>
               </div>
             )}
           </div>
 
-          <div className="p-4 bg-white border-t border-stone-100 flex items-center space-x-2">
+          <div className="p-6 bg-white dark:bg-[#0c0c0e] border-t border-stone-100 dark:border-white/5 flex items-center space-x-4">
             <input
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSend()}
               placeholder="Ask anything..."
-              className="flex-grow bg-stone-100 border-none rounded-full px-4 py-2 text-sm focus:ring-2 focus:ring-emerald-500 transition-all outline-none"
+              className="flex-grow bg-stone-100 dark:bg-white/5 border-none rounded-2xl px-6 py-4 text-sm font-medium focus:ring-2 focus:ring-emerald-500 transition-all outline-none dark:text-white"
             />
             <button
               onClick={handleSend}
               disabled={isLoading || !input.trim()}
-              aria-label="Send Message"
-              className="w-10 h-10 rounded-full bg-emerald-700 text-white flex items-center justify-center hover:bg-emerald-800 transition-colors disabled:opacity-50"
+              className="w-14 h-14 rounded-2xl vibrant-gradient text-white flex items-center justify-center hover:scale-105 active:scale-95 transition-all shadow-xl shadow-emerald-500/20 disabled:opacity-30"
             >
-              <i className="fa-solid fa-paper-plane text-xs"></i>
+              <i className="fa-solid fa-paper-plane text-lg"></i>
             </button>
           </div>
         </div>
       )}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        aria-label="Toggle AI Concierge"
-        className="w-14 h-14 rounded-full bg-emerald-700 text-white flex items-center justify-center shadow-xl hover:bg-emerald-800 transition-all hover:scale-105 active:scale-95"
+        className="w-16 h-16 rounded-[2rem] vibrant-gradient text-white flex items-center justify-center shadow-2xl shadow-emerald-500/30 hover:scale-110 active:scale-95 transition-all border-4 border-white dark:border-stone-900"
       >
         <i className={`fa-solid ${isOpen ? 'fa-comments' : 'fa-hat-cowboy'} text-2xl`}></i>
       </button>

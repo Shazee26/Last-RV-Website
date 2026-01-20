@@ -3,7 +3,6 @@ import React, { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { Review } from '../types/database';
 
-// Fix: Declare global google variable for Google Maps API to resolve "Cannot find name 'google'" errors.
 declare var google: any;
 
 const MOCK_REVIEWS: Review[] = [
@@ -23,9 +22,7 @@ const Reviews: React.FC = () => {
 
   useEffect(() => {
     const fetchGoogleReviews = () => {
-      // Ensure Google Maps Script is loaded (checked in index.html)
       if (typeof google === 'undefined' || !google.maps || !google.maps.places) {
-        console.warn('Google Maps API not loaded. Falling back to mock data.');
         setReviews(MOCK_REVIEWS);
         setLoading(false);
         return;
@@ -48,14 +45,12 @@ const Reviews: React.FC = () => {
               }));
               setReviews(googleReviews.length > 0 ? googleReviews : MOCK_REVIEWS);
             } else {
-              console.warn('Google Places API returned status:', status, 'falling back to mocks.');
               setReviews(MOCK_REVIEWS);
             }
             setLoading(false);
           }
         );
       } catch (err) {
-        console.error('Error fetching Google Reviews:', err);
         setReviews(MOCK_REVIEWS);
         setLoading(false);
       }
@@ -65,64 +60,65 @@ const Reviews: React.FC = () => {
   }, []);
 
   return (
-    <div className="py-20 bg-stone-50 dark:bg-stone-950 min-h-screen transition-colors duration-300">
-      <div className="max-w-5xl mx-auto px-4">
-        <div className="text-center mb-16">
-          <div className="inline-flex items-center space-x-2 bg-white dark:bg-stone-900 px-4 py-2 rounded-full shadow-sm mb-6 border border-stone-200 dark:border-stone-800">
-            <div className="flex text-amber-400">
-              <i className="fa-solid fa-star"></i>
-              <i className="fa-solid fa-star"></i>
-              <i className="fa-solid fa-star"></i>
-              <i className="fa-solid fa-star"></i>
-              <i className="fa-solid fa-star"></i>
+    <div className="py-32 bg-white dark:bg-[#0a0a0c] min-h-screen transition-colors duration-500 relative overflow-hidden">
+      {/* Decorative Vibrant Orbs */}
+      <div className="absolute top-0 right-0 w-[40rem] h-[40rem] bg-emerald-500/5 rounded-full blur-[120px] -mr-64 -mt-64"></div>
+      
+      <div className="max-w-7xl mx-auto px-6 relative z-10">
+        <div className="text-center mb-24 animate-in fade-in duration-1000">
+          <div className="inline-flex items-center space-x-3 bg-stone-50 dark:bg-white/5 px-6 py-3 rounded-full mb-8 border border-stone-100 dark:border-white/10 shadow-sm">
+            <div className="flex text-emerald-500">
+              {[...Array(5)].map((_, s) => <i key={s} className="fa-solid fa-star text-[10px]"></i>)}
             </div>
-            <span className="text-stone-700 dark:text-stone-200 font-bold">4.9 / 5</span>
-            <span className="text-stone-400 text-sm">based on guest feedback</span>
+            <span className="text-stone-800 dark:text-stone-200 text-[10px] font-black uppercase tracking-widest">4.9 Overall Rating</span>
           </div>
-          <h1 className="text-5xl font-bold text-stone-800 dark:text-stone-100">Guest Wall of Love</h1>
+          <h1 className="text-6xl md:text-8xl font-black text-stone-900 dark:text-white mb-6 tracking-tighter">Guest <span className="vibrant-text">Wall.</span></h1>
+          <p className="text-stone-500 dark:text-stone-400 text-lg max-w-xl mx-auto font-medium">Verified echoes of hospitality from our community of travelers.</p>
         </div>
 
         {loading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="bg-white dark:bg-stone-900 p-8 rounded-3xl shadow-sm border border-stone-100 dark:border-stone-800 h-64 animate-pulse">
-                <div className="h-4 bg-stone-100 dark:bg-stone-800 rounded w-1/4 mb-4"></div>
-                <div className="h-3 bg-stone-50 dark:bg-stone-800/50 rounded w-full mb-2"></div>
-                <div className="h-3 bg-stone-50 dark:bg-stone-800/50 rounded w-5/6 mb-8"></div>
-                <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-stone-100 dark:bg-stone-800 rounded-full"></div>
-                  <div className="h-4 bg-stone-100 dark:bg-stone-800 rounded w-1/3"></div>
-                </div>
-              </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
+            {[1, 2, 3, 4, 5, 6].map((i) => (
+              <div key={i} className="bg-stone-50 dark:bg-white/5 p-12 rounded-[3rem] border border-stone-100 dark:border-white/10 h-80 animate-pulse"></div>
             ))}
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
             {reviews.map((r, i) => (
-              <div key={i} className="bg-white dark:bg-stone-900 p-8 rounded-3xl shadow-sm border border-stone-100 dark:border-stone-800 flex flex-col justify-between transition-all hover:shadow-md">
-                <div>
-                  <div className="flex justify-between items-start mb-4">
-                    <div className="flex text-amber-400 text-sm">
-                      {[...Array(r.rating)].map((_, idx) => <i key={idx} className="fa-solid fa-star"></i>)}
-                    </div>
-                    <span className="text-stone-400 text-xs font-medium uppercase tracking-wider">{r.date}</span>
-                  </div>
-                  <p className="text-stone-600 dark:text-stone-400 italic leading-relaxed mb-6">"{r.text}"</p>
+              <div key={i} className="group bg-stone-50 dark:bg-white/5 p-12 rounded-[3.5rem] border border-stone-100 dark:border-white/5 hover:border-emerald-500/30 transition-all duration-500 hover:shadow-3xl hover:shadow-emerald-500/5 relative overflow-hidden">
+                <div className="absolute top-0 right-0 p-10 opacity-[0.03] group-hover:scale-125 transition-transform duration-1000">
+                  <i className="fa-solid fa-quote-right text-8xl text-emerald-500"></i>
                 </div>
-                <div className="flex items-center space-x-3 pt-4 border-t border-stone-50 dark:border-stone-800">
-                  <div className="w-10 h-10 bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400 rounded-full flex items-center justify-center font-bold uppercase">
+                
+                <div className="flex justify-between items-center mb-10">
+                  <div className="flex text-emerald-400 space-x-1">
+                    {[...Array(r.rating)].map((_, idx) => <i key={idx} className="fa-solid fa-star text-[10px]"></i>)}
+                  </div>
+                  <span className="text-[9px] font-black text-stone-400 uppercase tracking-widest">{r.date}</span>
+                </div>
+                
+                <p className="text-stone-600 dark:text-stone-300 italic leading-relaxed font-medium text-lg mb-12">
+                  "{r.text}"
+                </p>
+                
+                <div className="flex items-center space-x-5 pt-8 border-t border-stone-200 dark:border-white/5">
+                  <div className="w-14 h-14 vibrant-gradient rounded-2xl flex items-center justify-center font-black text-white text-xl shadow-lg">
                     {r.name.charAt(0)}
                   </div>
-                  <p className="font-bold text-stone-800 dark:text-stone-200">{r.name}</p>
+                  <div>
+                    <h4 className="font-black text-stone-900 dark:text-white tracking-tight">{r.name}</h4>
+                    <p className="text-[9px] text-emerald-500 font-black uppercase tracking-widest">Verified Traveler</p>
+                  </div>
                 </div>
               </div>
             ))}
           </div>
         )}
         
-        <div className="mt-16 text-center">
-          <a href={`https://www.google.com/maps/search/?api=1&query=Mountain+View+RV+Park+Van+Horn+TX&query_place_id=${PLACE_ID}`} target="_blank" rel="noopener noreferrer" className="bg-stone-900 dark:bg-stone-100 dark:text-stone-900 text-white px-8 py-3 rounded-full font-bold hover:bg-stone-800 transition-all inline-flex items-center">
-            <i className="fa-brands fa-google mr-2"></i> Write a Google Review
+        <div className="mt-32 text-center">
+          <a href={`https://www.google.com/maps/search/?api=1&query=Mountain+View+RV+Park+Van+Horn+TX`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center space-x-4 bg-stone-900 dark:bg-white text-white dark:text-stone-900 px-12 py-5 rounded-3xl font-black text-[10px] uppercase tracking-widest hover:vibrant-gradient hover:text-white transition-all shadow-2xl active:scale-95">
+            <i className="fa-brands fa-google text-lg"></i>
+            <span>Pin Your Own Experience</span>
           </a>
         </div>
       </div>

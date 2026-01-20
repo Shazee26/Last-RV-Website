@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 
 const FAQ: React.FC = () => {
@@ -30,39 +31,40 @@ const FAQ: React.FC = () => {
 
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
 
-  const toggleFAQ = (index: number) => {
-    setActiveIndex(activeIndex === index ? null : index);
-  };
-
   return (
-    <div className="py-20 bg-stone-50 dark:bg-stone-950 transition-colors duration-300 min-h-screen">
-      <div className="max-w-4xl mx-auto px-4">
-        <div className="text-center mb-16">
-          <span className="text-emerald-700 dark:text-emerald-400 text-xs font-black uppercase tracking-[0.4em] block mb-4">Resources</span>
-          <h1 className="text-5xl font-bold text-stone-800 dark:text-stone-100 mb-6">Common Questions</h1>
-          <p className="text-stone-500 dark:text-stone-400 text-lg">Everything you need to know about your stay at Mountain View RV Park.</p>
+    <div className="py-32 bg-white dark:bg-[#0a0a0c] transition-colors duration-500 min-h-screen">
+      <div className="max-w-4xl mx-auto px-6">
+        <div className="text-center mb-24">
+          <span className="vibrant-text text-[10px] font-black uppercase tracking-[0.5em] block mb-4">Support & Logistics</span>
+          <h1 className="text-6xl font-black text-stone-900 dark:text-white mb-6 tracking-tighter">Guest Info.</h1>
+          <p className="text-stone-500 dark:text-stone-400 text-lg font-medium leading-relaxed">Everything you need for a perfect high-desert expedition.</p>
         </div>
 
-        <div className="space-y-4">
+        <div className="space-y-6">
           {faqs.map((faq, index) => (
             <div 
               key={index} 
-              className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-2xl overflow-hidden transition-all shadow-sm"
+              className={`bg-white dark:bg-[#111114] border-2 rounded-[2rem] overflow-hidden transition-all duration-300 shadow-sm ${
+                activeIndex === index ? 'border-emerald-500/50 shadow-xl shadow-emerald-500/5' : 'border-stone-100 dark:border-white/5'
+              }`}
             >
               <button 
-                onClick={() => toggleFAQ(index)}
-                className="w-full text-left px-8 py-6 flex justify-between items-center focus:outline-none"
+                onClick={() => setActiveIndex(activeIndex === index ? null : index)}
+                className="w-full text-left px-10 py-8 flex justify-between items-center focus:outline-none"
               >
-                <span className="font-bold text-stone-800 dark:text-stone-200 text-lg leading-tight">{faq.question}</span>
-                <i className={`fa-solid ${activeIndex === index ? 'fa-minus' : 'fa-plus'} text-emerald-700 dark:text-emerald-400 transition-transform`}></i>
+                <span className={`font-black tracking-tight text-xl leading-tight transition-colors ${activeIndex === index ? 'text-emerald-500' : 'text-stone-800 dark:text-stone-200'}`}>{faq.question}</span>
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${activeIndex === index ? 'bg-emerald-500 text-white rotate-180' : 'bg-stone-50 dark:bg-white/5 text-stone-400'}`}>
+                  <i className="fa-solid fa-chevron-down text-xs"></i>
+                </div>
               </button>
               
               <div 
-                className={`px-8 transition-all duration-300 ease-in-out overflow-hidden ${
-                  activeIndex === index ? 'max-h-96 pb-6 opacity-100' : 'max-h-0 opacity-0'
+                className={`px-10 transition-all duration-500 ease-in-out overflow-hidden ${
+                  activeIndex === index ? 'max-h-96 pb-10 opacity-100' : 'max-h-0 opacity-0'
                 }`}
               >
-                <p className="text-stone-600 dark:text-stone-400 leading-relaxed">
+                <div className="w-12 h-1 bg-emerald-500/20 rounded-full mb-6"></div>
+                <p className="text-stone-600 dark:text-stone-400 leading-relaxed font-medium">
                   {faq.answer}
                 </p>
               </div>
@@ -70,18 +72,20 @@ const FAQ: React.FC = () => {
           ))}
         </div>
 
-        <div className="mt-20 p-10 bg-emerald-900 rounded-[3rem] text-white text-center relative overflow-hidden shadow-2xl">
-          <i className="fa-solid fa-comments absolute -top-10 -right-10 text-white/5 text-[12rem] rotate-12"></i>
-          <h3 className="text-2xl font-bold mb-4 relative z-10">Still have questions?</h3>
-          <p className="text-emerald-100 mb-8 relative z-10">Our friendly AI Concierge is available 24/7 to help you with local tips and park info.</p>
+        <div className="mt-32 p-12 md:p-20 bg-stone-950 rounded-[4rem] text-white text-center relative overflow-hidden shadow-3xl border border-white/5 group">
+          <div className="absolute top-0 right-0 p-12 opacity-[0.05] group-hover:scale-110 transition-transform duration-700">
+             <i className="fa-solid fa-comments text-[15rem] rotate-12"></i>
+          </div>
+          <h3 className="text-4xl font-black mb-6 relative z-10 tracking-tight">Need More <span className="vibrant-text">Clarity?</span></h3>
+          <p className="text-stone-400 mb-12 relative z-10 max-w-lg mx-auto font-medium">Our vibrant AI Concierge is available 24/7 to provide real-time local intelligence and park info.</p>
           <button 
             onClick={() => {
               const chatBtn = document.querySelector('[aria-label="Toggle AI Concierge"]') as HTMLButtonElement;
               if (chatBtn) chatBtn.click();
             }}
-            className="bg-white text-emerald-900 px-8 py-3 rounded-full font-bold hover:bg-stone-100 transition-all relative z-10"
+            className="vibrant-gradient text-white px-12 py-5 rounded-3xl font-black uppercase tracking-widest text-[10px] hover:scale-110 active:scale-95 transition-all shadow-2xl relative z-10"
           >
-            Chat with Concierge
+            Summon AI Concierge
           </button>
         </div>
       </div>

@@ -26,35 +26,30 @@ const Login: React.FC = () => {
     setMessage(null);
     setShowResend(false);
 
-    const redirectUrl = window.location.origin;
-
     try {
       if (isForgotPassword) {
         const { error } = await supabase.auth.resetPasswordForEmail(email, {
-          redirectTo: `${redirectUrl}/#/login?reset=true`,
+          redirectTo: `${window.location.origin}/#/login?reset=true`,
         });
         if (error) throw error;
-        setMessage('Password reset link sent! Please check your inbox.');
+        setMessage('Vibrant reset link dispatched! Please check your inbox.');
       } else if (isSignUp) {
         const { error, data } = await supabase.auth.signUp({ 
           email, 
           password,
-          options: {
-            emailRedirectTo: redirectUrl
-          }
+          options: { emailRedirectTo: window.location.origin }
         });
         if (error) throw error;
         
         if (data?.session) {
           navigate(from, { replace: true });
         } else {
-          setMessage('Activation email sent! Please check your inbox and spam folder to verify your account.');
+          setMessage('Activation transmission sent! Please verify your account to proceed.');
           setShowResend(true);
         }
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) {
-          // Detect if error is due to unconfirmed email
           if (error.message.toLowerCase().includes('confirm') || error.message.toLowerCase().includes('verify')) {
             setShowResend(true);
           }
@@ -63,8 +58,7 @@ const Login: React.FC = () => {
         navigate(from, { replace: true });
       }
     } catch (err: any) {
-      console.error('Auth operation failed:', err);
-      setError(err?.message || 'An unexpected authentication error occurred.');
+      setError(err?.message || 'Authentication sequence failed.');
     } finally {
       setLoading(false);
     }
@@ -72,137 +66,96 @@ const Login: React.FC = () => {
 
   const handleResendVerification = async () => {
     if (!email) {
-      setError("Please enter your email address first.");
+      setError("Email address required for re-transmission.");
       return;
     }
     setResendLoading(true);
     setError(null);
-    setMessage(null);
     try {
       const { error } = await supabase.auth.resend({
         type: 'signup',
         email: email,
-        options: {
-          emailRedirectTo: window.location.origin
-        }
+        options: { emailRedirectTo: window.location.origin }
       });
       if (error) throw error;
-      setMessage("A new verification link has been sent to your email.");
+      setMessage("Vibrant verification link re-dispatched.");
       setShowResend(false);
     } catch (err: any) {
-      setError(err.message || "Failed to resend verification email.");
+      setError(err.message || "Re-transmission failed.");
     } finally {
       setResendLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-stone-50 px-4 py-12 dark:bg-stone-950">
-      <div className="max-w-md w-full bg-white dark:bg-stone-900 p-8 rounded-3xl shadow-xl border border-stone-100 dark:border-stone-800">
-        <div className="text-center mb-8">
-          <i className="fa-solid fa-mountain-sun text-emerald-700 dark:text-emerald-500 text-4xl mb-4"></i>
-          <h2 className="text-3xl font-bold text-stone-800 dark:text-stone-100">
-            {isForgotPassword ? 'Reset Password' : isSignUp ? 'Join Mountain View' : 'Welcome Back'}
-          </h2>
-          <p className="text-stone-500 dark:text-stone-400 mt-2">
-            {isForgotPassword ? 'Enter your email to recover your account' : 'Access your guest dashboard'}
-          </p>
-        </div>
+    <div className="min-h-screen flex items-center justify-center bg-[#fdfcfb] dark:bg-[#0a0a0c] px-4 py-32 transition-colors duration-500 relative overflow-hidden">
+      {/* Background Decor */}
+      <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_top_right,rgba(16,185,129,0.05),transparent)] pointer-events-none"></div>
 
-        {error && (
-          <div className="mb-6 p-4 bg-rose-50 text-rose-700 text-sm rounded-xl border border-rose-100 animate-in fade-in slide-in-from-top-2">
-            <i className="fa-solid fa-circle-exclamation mr-2"></i>
-            {error}
-            {showResend && (
-              <button 
-                onClick={handleResendVerification}
-                disabled={resendLoading}
-                className="block mt-2 font-bold underline hover:text-rose-900 transition-colors"
-              >
-                {resendLoading ? 'Sending...' : 'Resend verification email?'}
-              </button>
-            )}
-          </div>
-        )}
-
-        {message && (
-          <div className="mb-6 p-4 bg-emerald-50 text-emerald-700 text-sm rounded-xl border border-emerald-100 animate-in fade-in slide-in-from-top-2">
-            <i className="fa-solid fa-circle-check mr-2"></i>
-            {message}
-          </div>
-        )}
-
-        <form onSubmit={handleAuth} className="space-y-4">
-          <div>
-            <label className="block text-[10px] font-black text-stone-400 uppercase tracking-widest mb-2">Email Address</label>
-            <input
-              type="email"
-              required
-              placeholder="name@example.com"
-              className="w-full bg-stone-50 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-xl px-4 py-3 focus:ring-2 focus:ring-emerald-500 outline-none transition-all dark:text-white"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            />
-          </div>
+      <div className="max-w-md w-full animate-in zoom-in duration-700">
+        <div className="bg-white dark:bg-stone-900 p-12 rounded-[3.5rem] shadow-3xl border border-stone-100 dark:border-white/5 relative overflow-hidden group">
+          {/* Accent Line */}
+          <div className="absolute top-0 left-0 w-full h-1.5 vibrant-gradient"></div>
           
-          {!isForgotPassword && (
-            <div>
-              <div className="flex justify-between items-center mb-2">
-                <label className="block text-[10px] font-black text-stone-400 uppercase tracking-widest">Password</label>
-                {!isSignUp && (
-                  <button 
-                    type="button"
-                    onClick={() => { setIsForgotPassword(true); setError(null); setMessage(null); setShowResend(false); }}
-                    className="text-[10px] font-bold text-emerald-700 dark:text-emerald-400 hover:underline uppercase tracking-widest"
-                  >
-                    Forgot?
-                  </button>
-                )}
-              </div>
-              <input
-                type="password"
-                required
-                placeholder="••••••••"
-                className="w-full bg-stone-50 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-xl px-4 py-3 focus:ring-2 focus:ring-emerald-500 outline-none transition-all dark:text-white"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
+          <div className="text-center mb-12">
+            <div className="w-20 h-20 vibrant-gradient rounded-[2rem] flex items-center justify-center mx-auto mb-8 shadow-2xl shadow-emerald-500/20 transform group-hover:rotate-6 transition-transform">
+              <i className="fa-solid fa-mountain-sun text-3xl text-white"></i>
+            </div>
+            <h2 className="text-4xl font-black text-stone-900 dark:text-white tracking-tighter mb-4">
+              {isForgotPassword ? 'Reset Access' : isSignUp ? 'Join Frontier' : 'Welcome Back'}
+            </h2>
+            <p className="text-stone-500 dark:text-stone-400 font-medium text-sm">
+              {isForgotPassword ? 'Secure your account recovery' : 'The high desert is waiting for you'}
+            </p>
+          </div>
+
+          {error && (
+            <div className="mb-8 p-5 bg-rose-500/10 text-rose-500 text-xs font-bold rounded-2xl border border-rose-500/20 animate-in slide-in-from-top-2">
+              <i className="fa-solid fa-triangle-exclamation mr-2"></i>
+              {error}
+              {showResend && (
+                <button onClick={handleResendVerification} disabled={resendLoading} className="block mt-2 underline hover:text-rose-700">
+                  {resendLoading ? 'Re-sending...' : 'Re-send verification email?'}
+                </button>
+              )}
             </div>
           )}
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-emerald-700 text-white py-4 rounded-xl font-bold hover:bg-emerald-800 transition-all shadow-lg disabled:opacity-50 flex items-center justify-center space-x-2 mt-2"
-          >
-            {loading ? (
-              <i className="fa-solid fa-spinner animate-spin"></i>
-            ) : (
-              <span>{isForgotPassword ? 'Send Recovery Link' : isSignUp ? 'Create Account' : 'Sign In'}</span>
-            )}
-          </button>
-        </form>
-
-        <div className="mt-8 text-center border-t border-stone-50 dark:border-stone-800 pt-6">
-          {isForgotPassword ? (
-            <button
-              onClick={() => { setIsForgotPassword(false); setError(null); setMessage(null); setShowResend(false); }}
-              className="text-stone-500 text-sm font-bold hover:text-emerald-700 transition-colors"
-            >
-              <i className="fa-solid fa-arrow-left mr-2"></i> Back to Login
-            </button>
-          ) : (
-            <button
-              onClick={() => { setIsSignUp(!isSignUp); setError(null); setMessage(null); setShowResend(false); }}
-              className="text-stone-500 text-sm font-medium"
-            >
-              {isSignUp ? (
-                <>Already have an account? <span className="text-emerald-700 font-bold hover:underline">Sign In</span></>
-              ) : (
-                <>Don't have an account? <span className="text-emerald-700 font-bold hover:underline">Sign Up</span></>
-              )}
-            </button>
+          {message && (
+            <div className="mb-8 p-5 bg-emerald-500/10 text-emerald-500 text-xs font-bold rounded-2xl border border-emerald-500/20 animate-in slide-in-from-top-2">
+              <i className="fa-solid fa-circle-check mr-2"></i>
+              {message}
+            </div>
           )}
+
+          <form onSubmit={handleAuth} className="space-y-6">
+            <div className="space-y-2">
+              <label className="block text-[10px] font-black text-stone-400 uppercase tracking-widest">Email Address</label>
+              <input type="email" required placeholder="maverick@pioneer.com" className="w-full bg-stone-50 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-2xl px-6 py-4 text-sm outline-none focus:ring-2 focus:ring-emerald-500 transition-all dark:text-white" value={email} onChange={(e) => setEmail(e.target.value)} />
+            </div>
+            
+            {!isForgotPassword && (
+              <div className="space-y-2">
+                <div className="flex justify-between items-center mb-2">
+                  <label className="block text-[10px] font-black text-stone-400 uppercase tracking-widest">Passphrase</label>
+                  {!isSignUp && (
+                    <button type="button" onClick={() => setIsForgotPassword(true)} className="text-[10px] font-black text-emerald-500 uppercase tracking-widest hover:underline">Forgot?</button>
+                  )}
+                </div>
+                <input type="password" required placeholder="••••••••" className="w-full bg-stone-50 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-2xl px-6 py-4 text-sm outline-none focus:ring-2 focus:ring-emerald-500 transition-all dark:text-white" value={password} onChange={(e) => setPassword(e.target.value)} />
+              </div>
+            )}
+
+            <button type="submit" disabled={loading} className="w-full vibrant-gradient text-white py-5 rounded-3xl font-black uppercase tracking-widest text-[10px] hover:scale-[1.02] active:scale-95 transition-all shadow-2xl shadow-emerald-500/30 flex items-center justify-center space-x-3">
+              {loading ? <i className="fa-solid fa-spinner animate-spin"></i> : <span>{isForgotPassword ? 'Send Recovery link' : isSignUp ? 'Initiate Account' : 'Secure Sign In'}</span>}
+            </button>
+          </form>
+
+          <div className="mt-12 text-center pt-8 border-t border-stone-100 dark:border-white/5">
+            <button onClick={() => { setIsSignUp(!isSignUp); setIsForgotPassword(false); setError(null); setMessage(null); }} className="text-stone-500 dark:text-stone-400 text-xs font-bold transition-colors hover:text-emerald-500">
+              {isSignUp ? "Already a member? Sign In" : "New to Mountain View? Sign Up"}
+            </button>
+          </div>
         </div>
       </div>
     </div>
