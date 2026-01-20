@@ -25,12 +25,15 @@ const Booking: React.FC = () => {
   const [myBookings, setMyBookings] = useState<BookingType[]>([]);
   const [isLoadingMyBookings, setIsLoadingMyBookings] = useState(true);
 
-  // Fetch all bookings to populate the availability calendar
+  // Fetch ALL bookings to populate the availability calendar for everyone
   const fetchGlobalAvailability = async () => {
     setIsLoadingGlobal(true);
     try {
-      // 'global_availability' is a view defined in Supabase that returns check_in/check_out dates
-      const { data, error } = await supabase.from('global_availability' as any).select('*');
+      // Querying the 'bookings' table directly as requested
+      const { data, error } = await supabase
+        .from('bookings')
+        .select('check_in, check_out');
+      
       if (error) throw error;
 
       const dates = new Set<string>();
@@ -39,6 +42,7 @@ const Booking: React.FC = () => {
         const end = new Date(booking.check_out + 'T00:00:00');
         let current = new Date(start);
         
+        // Site is occupied from check_in until the night BEFORE check_out
         while (current < end) {
           dates.add(current.toISOString().split('T')[0]);
           current.setDate(current.getDate() + 1);
@@ -52,7 +56,7 @@ const Booking: React.FC = () => {
     }
   };
 
-  // Fetch only the logged-in user's bookings
+  // Fetch only the logged-in user's specific bookings
   const fetchMyBookings = async () => {
     if (!user) return;
     setIsLoadingMyBookings(true);
@@ -72,6 +76,28 @@ const Booking: React.FC = () => {
     }
   };
 
+  // REAL-TIME SYNC: Listen for changes on the 'bookings' table
+  useEffect(() => {
+    fetchGlobalAvailability();
+    fetchMyBookings();
+
+    const channel = supabase
+      .channel('realtime_bookings')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'bookings' },
+        () => {
+          fetchGlobalAvailability();
+          fetchMyBookings();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user]);
+
   const handleCancelBooking = async (id: string | number) => {
     if (!confirm('Are you sure you want to cancel this reservation?')) return;
     
@@ -80,18 +106,13 @@ const Booking: React.FC = () => {
       if (error) throw error;
       
       setStatus({ type: 'success', message: 'Reservation cancelled successfully.' });
-      // Refresh both lists
+      // Realtime listener will handle the refresh, but we can do it manually for immediate feedback
       await Promise.all([fetchGlobalAvailability(), fetchMyBookings()]);
     } catch (err: any) {
       console.error('Cancellation error:', err);
       setStatus({ type: 'error', message: err.message || 'Failed to cancel reservation.' });
     }
   };
-
-  useEffect(() => {
-    fetchGlobalAvailability();
-    fetchMyBookings();
-  }, [user]);
 
   const validateForm = () => {
     if (!formData.check_in || !formData.check_out) {
@@ -139,10 +160,10 @@ const Booking: React.FC = () => {
 
       setStatus({ 
         type: 'success', 
-        message: "Reservation confirmed! A confirmation email is being sent to your inbox." 
+        message: "Reservation confirmed! Your dates are now locked in real-time." 
       });
       
-      // Reset form
+      // Reset form (keeping user email)
       setFormData({ 
         name: '', 
         email: user?.email || '', 
@@ -153,12 +174,19 @@ const Booking: React.FC = () => {
         user_id: user?.id || '' 
       });
       
-      // Update UI
-      await Promise.all([fetchGlobalAvailability(), fetchMyBookings()]);
     } catch (err: any) {
       setStatus({ type: 'error', message: err?.message || "Something went wrong. Please try again." });
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const getRvSizeLabel = (size: string) => {
+    switch(size) {
+      case 'standard': return 'Standard (30ft)';
+      case 'large': return 'Large (45ft)';
+      case 'premium': return 'Premium Pull-Through';
+      default: return size;
     }
   };
 
@@ -167,16 +195,23 @@ const Booking: React.FC = () => {
       <div className="max-w-7xl mx-auto">
         <div className="flex flex-col lg:flex-row gap-12">
           
-          <div className="flex-grow space-y-8">
+          <div className="flex-grow space-y-12">
             {/* New Reservation Form */}
             <div className="bg-white dark:bg-stone-900 p-8 md:p-12 rounded-[2.5rem] shadow-xl border border-stone-100 dark:border-stone-800">
-              <div className="flex items-center space-x-4 mb-8">
-                <div className="w-12 h-12 bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400 rounded-2xl flex items-center justify-center">
-                  <i className="fa-solid fa-calendar-plus text-xl"></i>
+              <div className="flex items-center justify-between mb-8">
+                <div className="flex items-center space-x-4">
+                  <div className="w-12 h-12 bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400 rounded-2xl flex items-center justify-center">
+                    <i className="fa-solid fa-calendar-plus text-xl"></i>
+                  </div>
+                  <div>
+                    <h1 className="text-3xl font-bold text-stone-800 dark:text-stone-100 tracking-tight">New Reservation</h1>
+                    <p className="text-sm text-stone-400">Secure your spot in the high desert</p>
+                  </div>
                 </div>
-                <div>
-                  <h1 className="text-3xl font-bold text-stone-800 dark:text-stone-100 tracking-tight">New Reservation</h1>
-                  <p className="text-sm text-stone-400">Secure your spot in the high desert</p>
+                {/* Real-time Indicator */}
+                <div className="hidden sm:flex items-center space-x-2 bg-emerald-50 dark:bg-emerald-900/20 px-4 py-2 rounded-full border border-emerald-100 dark:border-emerald-800">
+                   <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
+                   <span className="text-[10px] font-black text-emerald-700 dark:text-emerald-400 uppercase tracking-widest">Live Sync Enabled</span>
                 </div>
               </div>
               
@@ -186,7 +221,7 @@ const Booking: React.FC = () => {
                 }`}>
                   <i className={`fa-solid ${status.type === 'success' ? 'fa-circle-check' : 'fa-triangle-exclamation'} mt-1`}></i>
                   <div>
-                    <p className="font-bold text-sm">{status.type === 'success' ? 'Success' : 'Attention'}</p>
+                    <p className="font-bold text-sm">{status.type === 'success' ? 'Confirmed' : 'Error'}</p>
                     <p className="text-xs opacity-80 mt-1">{status.message}</p>
                   </div>
                 </div>
@@ -195,11 +230,11 @@ const Booking: React.FC = () => {
               <form onSubmit={handleSubmit} className="space-y-8">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   <div className="space-y-2">
-                    <label className="block text-[10px] font-black text-stone-400 uppercase tracking-widest">Primary Guest</label>
+                    <label className="block text-[10px] font-black text-stone-400 uppercase tracking-widest">Primary Guest Name</label>
                     <input 
                       type="text" 
                       required 
-                      placeholder="Your Full Name"
+                      placeholder="e.g. John Doe"
                       className="w-full bg-stone-50 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-2xl px-5 py-4 outline-none focus:ring-2 focus:ring-emerald-500 transition-all dark:text-stone-100"
                       value={formData.name}
                       onChange={(e) => setFormData({...formData, name: e.target.value})}
@@ -255,7 +290,7 @@ const Booking: React.FC = () => {
                     </select>
                   </div>
                   <div className="space-y-2">
-                    <label className="block text-[10px] font-black text-stone-400 uppercase tracking-widest">Party Size</label>
+                    <label className="block text-[10px] font-black text-stone-400 uppercase tracking-widest">Guest Count</label>
                     <input 
                       type="number" 
                       min="1" 
@@ -273,7 +308,7 @@ const Booking: React.FC = () => {
                   className="w-full bg-emerald-700 text-white py-5 rounded-2xl font-bold hover:bg-emerald-800 transition-all shadow-xl disabled:opacity-50 flex items-center justify-center space-x-3"
                 >
                   {isSubmitting ? (
-                    <><i className="fa-solid fa-spinner animate-spin"></i><span>Confirming...</span></>
+                    <><i className="fa-solid fa-spinner animate-spin"></i><span>Locking Dates...</span></>
                   ) : (
                     <><i className="fa-solid fa-check-circle"></i><span>Book Your Spot</span></>
                   )}
@@ -281,86 +316,108 @@ const Booking: React.FC = () => {
               </form>
             </div>
 
-            {/* My Bookings Section */}
-            {user && (
-              <div className="bg-white dark:bg-stone-900 p-8 md:p-12 rounded-[2.5rem] shadow-xl border border-stone-100 dark:border-stone-800">
-                <div className="flex justify-between items-center mb-8">
-                  <div>
-                    <h2 className="text-2xl font-bold text-stone-800 dark:text-stone-100">My Bookings</h2>
-                    <p className="text-xs text-stone-400 mt-1">Review and manage your West Texas trips</p>
-                  </div>
-                  <button onClick={fetchMyBookings} aria-label="Refresh bookings" className="text-stone-300 hover:text-emerald-600 transition-colors">
-                    <i className="fa-solid fa-arrows-rotate text-sm"></i>
-                  </button>
+            {/* My Bookings Section - Accessible Dashboard */}
+            <div className="bg-white dark:bg-stone-900 p-8 md:p-12 rounded-[2.5rem] shadow-xl border border-stone-100 dark:border-stone-800 animate-in fade-in slide-in-from-bottom-6 duration-700">
+              <div className="flex justify-between items-center mb-10">
+                <div>
+                  <h2 className="text-2xl font-bold text-stone-800 dark:text-stone-100">My Bookings</h2>
+                  <p className="text-xs text-stone-400 mt-1 uppercase font-black tracking-widest">Guest Management Portal</p>
                 </div>
+                <div className="flex items-center space-x-2">
+                  <span className="text-[10px] font-bold text-stone-400">Status: <span className="text-emerald-500">Authenticated</span></span>
+                </div>
+              </div>
 
-                {isLoadingMyBookings ? (
-                  <div className="space-y-4">
-                    {[1, 2].map(i => <div key={i} className="h-28 bg-stone-50 dark:bg-stone-800 rounded-3xl animate-pulse"></div>)}
-                  </div>
-                ) : myBookings.length > 0 ? (
-                  <div className="space-y-4">
-                    {myBookings.map((b) => (
-                      <div key={b.id} className="p-6 rounded-3xl border border-stone-100 dark:border-stone-800 bg-stone-50/30 dark:bg-stone-950/30 hover:bg-white dark:hover:bg-stone-800 transition-all hover:shadow-md flex flex-col md:flex-row md:items-center justify-between gap-6">
-                        <div className="flex items-center space-x-5">
-                          <div className="w-16 h-16 bg-emerald-600 text-white rounded-2xl flex flex-col items-center justify-center shadow-lg shadow-emerald-900/10">
-                            <span className="text-[10px] font-black uppercase leading-none">{new Date(b.check_in + 'T00:00:00').toLocaleString('default', { month: 'short' })}</span>
-                            <span className="text-2xl font-black leading-none mt-1">{new Date(b.check_in + 'T00:00:00').getDate()}</span>
-                          </div>
-                          <div>
-                            <p className="font-bold text-stone-800 dark:text-stone-100 text-lg">RV Site Stay</p>
-                            <div className="flex items-center space-x-2 text-[11px] text-stone-400 font-medium mt-0.5">
-                              <i className="fa-solid fa-calendar-day"></i>
-                              <span>{new Date(b.check_in + 'T00:00:00').toLocaleDateString()} — {new Date(b.check_out + 'T00:00:00').toLocaleDateString()}</span>
-                            </div>
-                          </div>
+              {isLoadingMyBookings ? (
+                <div className="space-y-6">
+                  {[1, 2].map(i => (
+                    <div key={i} className="p-6 rounded-3xl bg-stone-50 dark:bg-stone-800 animate-pulse flex items-center space-x-4">
+                       <div className="w-16 h-16 bg-stone-200 dark:bg-stone-700 rounded-2xl"></div>
+                       <div className="flex-grow space-y-2">
+                         <div className="h-4 bg-stone-200 dark:bg-stone-700 rounded w-1/4"></div>
+                         <div className="h-3 bg-stone-200 dark:bg-stone-700 rounded w-1/2"></div>
+                       </div>
+                    </div>
+                  ))}
+                </div>
+              ) : myBookings.length > 0 ? (
+                <div className="space-y-6">
+                  {myBookings.map((b) => (
+                    <div key={b.id} className="group p-8 rounded-3xl border border-stone-100 dark:border-stone-800 bg-stone-50/50 dark:bg-stone-950/50 hover:bg-white dark:hover:bg-stone-800 transition-all hover:shadow-lg flex flex-col md:flex-row md:items-center justify-between gap-8">
+                      <div className="flex items-center space-x-6">
+                        <div className="w-16 h-16 bg-emerald-600 text-white rounded-2xl flex flex-col items-center justify-center shadow-lg shadow-emerald-900/10 transition-transform group-hover:scale-105">
+                          <span className="text-[10px] font-black uppercase leading-none">{new Date(b.check_in + 'T00:00:00').toLocaleString('default', { month: 'short' })}</span>
+                          <span className="text-2xl font-black leading-none mt-1">{new Date(b.check_in + 'T00:00:00').getDate()}</span>
                         </div>
-                        <div className="flex items-center justify-between md:justify-end space-x-8 border-t md:border-t-0 pt-4 md:pt-0 border-stone-100 dark:border-stone-800">
-                          <div className="text-left md:text-right">
-                            <p className="text-[9px] text-stone-400 font-black uppercase tracking-widest mb-0.5">RV Size</p>
-                            <p className="text-[11px] text-stone-600 dark:text-stone-300 font-bold capitalize">{b.rv_size}</p>
+                        <div>
+                          <div className="flex items-center space-x-3 mb-1">
+                            <p className="font-bold text-stone-800 dark:text-stone-100 text-xl">RV Site Reservation</p>
+                            <span className="px-3 py-1 bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400 text-[9px] font-black uppercase tracking-widest rounded-full">Confirmed</span>
                           </div>
-                          <button 
-                            onClick={() => b.id && handleCancelBooking(b.id)}
-                            className="px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest bg-rose-50 dark:bg-rose-950/30 text-rose-600 hover:bg-rose-600 hover:text-white transition-all border border-rose-100 dark:border-rose-900"
-                          >
-                            Cancel
-                          </button>
+                          <div className="flex flex-wrap gap-4 text-xs text-stone-500 dark:text-stone-400 font-medium">
+                            <span className="flex items-center"><i className="fa-solid fa-calendar-day mr-2 text-emerald-600"></i>{new Date(b.check_in + 'T00:00:00').toLocaleDateString()} — {new Date(b.check_out + 'T00:00:00').toLocaleDateString()}</span>
+                            <span className="flex items-center"><i className="fa-solid fa-caravan mr-2 text-emerald-600"></i>{getRvSizeLabel(b.rv_size)}</span>
+                            <span className="flex items-center"><i className="fa-solid fa-users mr-2 text-emerald-600"></i>{b.guests} Guests</span>
+                          </div>
                         </div>
                       </div>
-                    ))}
+                      <div className="flex items-center justify-end md:border-l border-stone-200 dark:border-stone-700 md:pl-8">
+                        <button 
+                          onClick={() => b.id && handleCancelBooking(b.id)}
+                          className="w-full md:w-auto px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest bg-white dark:bg-stone-900 text-rose-600 border border-stone-200 dark:border-stone-700 hover:bg-rose-600 hover:text-white hover:border-rose-600 transition-all shadow-sm"
+                        >
+                          <i className="fa-solid fa-trash-can mr-2"></i> Cancel Stay
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-24 border-2 border-dashed border-stone-100 dark:border-stone-800 rounded-[3rem] bg-stone-50/20">
+                  <div className="w-20 h-20 bg-stone-100 dark:bg-stone-800 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <i className="fa-solid fa-map-location-dot text-stone-300 dark:text-stone-700 text-4xl"></i>
                   </div>
-                ) : (
-                  <div className="text-center py-20 border-2 border-dashed border-stone-100 dark:border-stone-800 rounded-[2.5rem]">
-                    <i className="fa-solid fa-map-location-dot text-stone-200 dark:text-stone-800 text-5xl mb-4"></i>
-                    <p className="text-stone-400 font-bold">No active bookings found for your account.</p>
-                  </div>
-                )}
-              </div>
-            )}
+                  <h3 className="text-lg font-bold text-stone-600 dark:text-stone-400 mb-2">No Active Stays</h3>
+                  <p className="text-stone-400 dark:text-stone-500 text-sm max-w-xs mx-auto">Your desert adventures will appear here. Reserve a spot to get started!</p>
+                </div>
+              )}
+            </div>
           </div>
 
           <aside className="w-full lg:w-[420px] space-y-8">
-            {/* Calendar passed with all booked dates */}
+            {/* Calendar with real-time global availability */}
             <AvailabilityCalendar bookedDates={globalBookedDates} isLoading={isLoadingGlobal} />
             
-            <div className="bg-emerald-900 text-white p-10 rounded-[2.5rem] shadow-2xl relative overflow-hidden">
-              <i className="fa-solid fa-mountain absolute -bottom-10 -right-10 text-white/5 text-[15rem] transform rotate-12"></i>
-              <h3 className="text-2xl font-bold mb-8 relative z-10 text-emerald-300">Park Rates</h3>
+            <div className="bg-emerald-900 text-white p-10 rounded-[2.5rem] shadow-2xl relative overflow-hidden group">
+              <i className="fa-solid fa-mountain absolute -bottom-10 -right-10 text-white/5 text-[15rem] transform rotate-12 transition-transform group-hover:rotate-6"></i>
+              <h3 className="text-2xl font-bold mb-8 relative z-10 text-emerald-300">Season Rates</h3>
               <div className="space-y-6 relative z-10 font-medium">
                 <div className="flex justify-between items-end border-b border-white/10 pb-4">
-                  <span className="text-stone-400 text-sm">Nightly</span>
+                  <span className="text-stone-400 text-sm">Nightly Stop</span>
                   <span className="font-bold text-2xl">$45.00</span>
                 </div>
                 <div className="flex justify-between items-end border-b border-white/10 pb-4">
-                  <span className="text-stone-400 text-sm">Weekly</span>
+                  <span className="text-stone-400 text-sm">Weekly Pass</span>
                   <span className="font-bold text-2xl">$275.00</span>
                 </div>
                 <div className="flex justify-between items-end">
-                  <span className="text-stone-400 text-sm">Monthly</span>
+                  <span className="text-stone-400 text-sm">Monthly Stay</span>
                   <span className="font-bold text-2xl text-emerald-400">$750.00</span>
                 </div>
               </div>
+            </div>
+            
+            <div className="bg-stone-100 dark:bg-stone-900 p-8 rounded-[2.5rem] border border-stone-200 dark:border-stone-800">
+               <h4 className="font-bold text-stone-800 dark:text-stone-100 mb-4 flex items-center">
+                 <i className="fa-solid fa-circle-info mr-2 text-emerald-600"></i>
+                 Booking Policy
+               </h4>
+               <ul className="text-xs text-stone-500 dark:text-stone-400 space-y-3 leading-relaxed">
+                 <li>• Reservations are confirmed instantly.</li>
+                 <li>• Full refund for cancellations made 48 hours prior to arrival.</li>
+                 <li>• Check-in: 1:00 PM | Check-out: 11:00 AM.</li>
+                 <li>• Self-service portal allows 24/7 management.</li>
+               </ul>
             </div>
           </aside>
         </div>

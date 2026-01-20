@@ -9,13 +9,14 @@ const Login: React.FC = () => {
   const [isSignUp, setIsSignUp] = useState(false);
   const [isForgotPassword, setIsForgotPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [resendLoading, setResendLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+  const [showResend, setShowResend] = useState(false);
   
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Get the intended destination from location state (set by ProtectedRoute)
   const from = (location.state as any)?.from?.pathname || '/';
 
   const handleAuth = async (e: React.FormEvent) => {
@@ -23,18 +24,17 @@ const Login: React.FC = () => {
     setLoading(true);
     setError(null);
     setMessage(null);
+    setShowResend(false);
 
-    // We explicitly define the redirect URL to current location to avoid Supabase 
-    // defaulting to 'localhost' which causes 'Connection Refused' errors in previews.
-    const redirectUrl = window.location.origin + window.location.pathname;
+    const redirectUrl = window.location.origin;
 
     try {
       if (isForgotPassword) {
         const { error } = await supabase.auth.resetPasswordForEmail(email, {
-          redirectTo: `${redirectUrl}#/login?reset=true`,
+          redirectTo: `${redirectUrl}/#/login?reset=true`,
         });
         if (error) throw error;
-        setMessage('Password reset link sent! Please check your email inbox.');
+        setMessage('Password reset link sent! Please check your inbox.');
       } else if (isSignUp) {
         const { error, data } = await supabase.auth.signUp({ 
           email, 
@@ -45,16 +45,21 @@ const Login: React.FC = () => {
         });
         if (error) throw error;
         
-        // If session exists immediately, user was auto-confirmed
         if (data?.session) {
           navigate(from, { replace: true });
         } else {
-          setMessage('Registration successful! Please check your email for a confirmation link to activate your account.');
+          setMessage('Activation email sent! Please check your inbox and spam folder to verify your account.');
+          setShowResend(true);
         }
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) throw error;
-        // Redirect to intended page or home
+        if (error) {
+          // Detect if error is due to unconfirmed email
+          if (error.message.toLowerCase().includes('confirm') || error.message.toLowerCase().includes('verify')) {
+            setShowResend(true);
+          }
+          throw error;
+        }
         navigate(from, { replace: true });
       }
     } catch (err: any) {
@@ -65,16 +70,42 @@ const Login: React.FC = () => {
     }
   };
 
+  const handleResendVerification = async () => {
+    if (!email) {
+      setError("Please enter your email address first.");
+      return;
+    }
+    setResendLoading(true);
+    setError(null);
+    setMessage(null);
+    try {
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email: email,
+        options: {
+          emailRedirectTo: window.location.origin
+        }
+      });
+      if (error) throw error;
+      setMessage("A new verification link has been sent to your email.");
+      setShowResend(false);
+    } catch (err: any) {
+      setError(err.message || "Failed to resend verification email.");
+    } finally {
+      setResendLoading(false);
+    }
+  };
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-stone-50 px-4 py-12">
-      <div className="max-w-md w-full bg-white p-8 rounded-3xl shadow-xl border border-stone-100">
+    <div className="min-h-screen flex items-center justify-center bg-stone-50 px-4 py-12 dark:bg-stone-950">
+      <div className="max-w-md w-full bg-white dark:bg-stone-900 p-8 rounded-3xl shadow-xl border border-stone-100 dark:border-stone-800">
         <div className="text-center mb-8">
-          <i className="fa-solid fa-mountain-sun text-emerald-700 text-4xl mb-4"></i>
-          <h2 className="text-3xl font-bold text-stone-800">
+          <i className="fa-solid fa-mountain-sun text-emerald-700 dark:text-emerald-500 text-4xl mb-4"></i>
+          <h2 className="text-3xl font-bold text-stone-800 dark:text-stone-100">
             {isForgotPassword ? 'Reset Password' : isSignUp ? 'Join Mountain View' : 'Welcome Back'}
           </h2>
-          <p className="text-stone-500 mt-2">
-            {isForgotPassword ? 'Enter your email to receive a recovery link' : 'Access your guest dashboard'}
+          <p className="text-stone-500 dark:text-stone-400 mt-2">
+            {isForgotPassword ? 'Enter your email to recover your account' : 'Access your guest dashboard'}
           </p>
         </div>
 
@@ -82,6 +113,15 @@ const Login: React.FC = () => {
           <div className="mb-6 p-4 bg-rose-50 text-rose-700 text-sm rounded-xl border border-rose-100 animate-in fade-in slide-in-from-top-2">
             <i className="fa-solid fa-circle-exclamation mr-2"></i>
             {error}
+            {showResend && (
+              <button 
+                onClick={handleResendVerification}
+                disabled={resendLoading}
+                className="block mt-2 font-bold underline hover:text-rose-900 transition-colors"
+              >
+                {resendLoading ? 'Sending...' : 'Resend verification email?'}
+              </button>
+            )}
           </div>
         )}
 
@@ -99,7 +139,7 @@ const Login: React.FC = () => {
               type="email"
               required
               placeholder="name@example.com"
-              className="w-full bg-stone-50 border border-stone-200 rounded-xl px-4 py-3 focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
+              className="w-full bg-stone-50 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-xl px-4 py-3 focus:ring-2 focus:ring-emerald-500 outline-none transition-all dark:text-white"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
             />
@@ -112,8 +152,8 @@ const Login: React.FC = () => {
                 {!isSignUp && (
                   <button 
                     type="button"
-                    onClick={() => { setIsForgotPassword(true); setError(null); setMessage(null); }}
-                    className="text-[10px] font-bold text-emerald-700 hover:underline uppercase tracking-widest"
+                    onClick={() => { setIsForgotPassword(true); setError(null); setMessage(null); setShowResend(false); }}
+                    className="text-[10px] font-bold text-emerald-700 dark:text-emerald-400 hover:underline uppercase tracking-widest"
                   >
                     Forgot?
                   </button>
@@ -123,7 +163,7 @@ const Login: React.FC = () => {
                 type="password"
                 required
                 placeholder="••••••••"
-                className="w-full bg-stone-50 border border-stone-200 rounded-xl px-4 py-3 focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
+                className="w-full bg-stone-50 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-xl px-4 py-3 focus:ring-2 focus:ring-emerald-500 outline-none transition-all dark:text-white"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
               />
@@ -143,17 +183,17 @@ const Login: React.FC = () => {
           </button>
         </form>
 
-        <div className="mt-8 text-center border-t border-stone-50 pt-6">
+        <div className="mt-8 text-center border-t border-stone-50 dark:border-stone-800 pt-6">
           {isForgotPassword ? (
             <button
-              onClick={() => { setIsForgotPassword(false); setError(null); setMessage(null); }}
+              onClick={() => { setIsForgotPassword(false); setError(null); setMessage(null); setShowResend(false); }}
               className="text-stone-500 text-sm font-bold hover:text-emerald-700 transition-colors"
             >
               <i className="fa-solid fa-arrow-left mr-2"></i> Back to Login
             </button>
           ) : (
             <button
-              onClick={() => { setIsSignUp(!isSignUp); setError(null); setMessage(null); }}
+              onClick={() => { setIsSignUp(!isSignUp); setError(null); setMessage(null); setShowResend(false); }}
               className="text-stone-500 text-sm font-medium"
             >
               {isSignUp ? (

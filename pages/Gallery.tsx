@@ -35,6 +35,8 @@ const Gallery: React.FC = () => {
   
   const [uploadTitle, setUploadTitle] = useState("");
   const [uploadCategory, setUploadCategory] = useState("Scenery");
+  const [uploadCheckIn, setUploadCheckIn] = useState("");
+  const [uploadCheckOut, setUploadCheckOut] = useState("");
   const [submissionMode, setSubmissionMode] = useState<'file' | 'link'>('file');
   const [externalUrl, setExternalUrl] = useState("");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -153,6 +155,8 @@ const Gallery: React.FC = () => {
           url: finalUrl, 
           title: uploadTitle || 'Guest Memory', 
           category: uploadCategory,
+          check_in: uploadCheckIn || null,
+          check_out: uploadCheckOut || null,
           user_id: user.id 
         }])
         .select();
@@ -166,6 +170,8 @@ const Gallery: React.FC = () => {
 
       // Reset form and UI state
       setUploadTitle("");
+      setUploadCheckIn("");
+      setUploadCheckOut("");
       setExternalUrl("");
       setSelectedFile(null);
       setPreviewUrl(null);
@@ -259,6 +265,27 @@ const Gallery: React.FC = () => {
                 </div>
               </div>
 
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-[10px] font-black text-stone-500 uppercase tracking-widest mb-3">Arrival Date (Optional)</label>
+                  <input 
+                    type="date"
+                    className="w-full bg-stone-900 border border-stone-700 rounded-2xl px-5 py-4 text-sm outline-none focus:ring-2 focus:ring-emerald-500 transition-all text-white"
+                    value={uploadCheckIn}
+                    onChange={(e) => setUploadCheckIn(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-black text-stone-500 uppercase tracking-widest mb-3">Departure Date (Optional)</label>
+                  <input 
+                    type="date"
+                    className="w-full bg-stone-900 border border-stone-700 rounded-2xl px-5 py-4 text-sm outline-none focus:ring-2 focus:ring-emerald-500 transition-all text-white"
+                    value={uploadCheckOut}
+                    onChange={(e) => setUploadCheckOut(e.target.value)}
+                  />
+                </div>
+              </div>
+
               {submissionMode === 'file' ? (
                 <div 
                   onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
@@ -345,7 +372,14 @@ const Gallery: React.FC = () => {
               <div key={img.id || idx} className="break-inside-avoid relative group rounded-[2.5rem] overflow-hidden shadow-2xl transition-all duration-500 hover:scale-[1.02] hover:ring-2 hover:ring-emerald-500/50 animate-in fade-in zoom-in duration-500">
                 <img src={img.url} alt={img.title} className="w-full h-auto object-cover opacity-90 group-hover:opacity-100 transition-all duration-700" loading="lazy" />
                 <div className="absolute inset-0 bg-gradient-to-t from-stone-950 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-all duration-500 p-8 flex flex-col justify-end">
-                   <span className="text-[9px] font-black uppercase tracking-widest text-emerald-400 mb-2">{img.category}</span>
+                   <div className="flex justify-between items-end mb-2">
+                     <span className="text-[9px] font-black uppercase tracking-widest text-emerald-400">{img.category}</span>
+                     {(img.check_in || img.check_out) && (
+                       <span className="text-[8px] font-bold text-stone-400 bg-black/40 px-2 py-0.5 rounded-full backdrop-blur-sm">
+                         {img.check_in ? new Date(img.check_in + 'T00:00:00').toLocaleDateString() : '...'} - {img.check_out ? new Date(img.check_out + 'T00:00:00').toLocaleDateString() : '...'}
+                       </span>
+                     )}
+                   </div>
                    <h5 className="text-xl font-bold text-white">{img.title}</h5>
                 </div>
               </div>

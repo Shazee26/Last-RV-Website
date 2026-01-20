@@ -25,6 +25,8 @@ export interface GalleryImage {
   url: string;
   title: string;
   category: string;
+  check_in?: string;
+  check_out?: string;
   user_id?: string;
   created_at?: string;
 }
