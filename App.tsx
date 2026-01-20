@@ -181,7 +181,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
               <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center shadow-lg">
                 <i className="fa-solid fa-mountain-sun text-white"></i>
               </div>
-              <span className="font-black text-xl tracking-tighter">Mountain View RV</span>
+              <span className="font-black text-xl tracking-tighter">Mountain View</span>
             </div>
             <p className="text-sm leading-relaxed text-stone-500 font-medium">
               Your vibrant desert oasis in the heart of Van Horn, Texas. Premium sites, high-speed Wi-Fi, and the best mountain sunsets in the West.
@@ -194,6 +194,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
               <li><Link to="/amenities" className="text-stone-500 hover:text-emerald-400 transition-colors">Amenities</Link></li>
               <li><Link to="/gallery" className="text-stone-500 hover:text-emerald-400 transition-colors">Gallery</Link></li>
               <li><Link to="/booking" className="text-stone-500 hover:text-emerald-400 transition-colors">Book Stay</Link></li>
+              <li><Link to="/sitemap" className="text-stone-500 hover:text-emerald-400 transition-colors">Sitemap</Link></li>
             </ul>
           </div>
           <div>
