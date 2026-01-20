@@ -82,25 +82,34 @@ const WeatherWidget: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center py-20">
-        <div className="animate-spin rounded-xl h-12 w-12 border-4 border-emerald-500 border-t-transparent"></div>
+      <div className="flex justify-center items-center py-24">
+        <div className="animate-spin rounded-2xl h-16 w-16 border-4 border-brand-primary border-t-transparent shadow-vibrant"></div>
       </div>
     );
   }
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-6">
+    <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-8">
       {forecast.map((day, idx) => (
-        <div key={idx} className="group bg-white dark:bg-[#111114] p-8 rounded-[2.5rem] shadow-sm border border-stone-100 dark:border-white/5 text-center transition-all hover:shadow-2xl hover:scale-105 hover:border-emerald-500/30">
-          <p className="text-[10px] font-black text-stone-400 dark:text-stone-500 uppercase tracking-widest mb-6">{day.date}</p>
-          <div className="mb-6 transform group-hover:scale-125 transition-transform duration-500">
-             <i className={`fa-solid ${day.icon} text-4xl ${day.icon === 'fa-sun' ? 'text-orange-500' : 'text-blue-400'} drop-shadow-vibrant`}></i>
+        <div key={idx} className="group bg-white dark:bg-stone-900 p-10 rounded-[3.5rem] shadow-soft border border-stone-100 dark:border-white/5 text-center transition-all duration-500 hover:shadow-vibrant hover:-translate-y-2 hover:border-brand-primary/30 relative overflow-hidden">
+          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-brand-primary/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+          
+          <p className="text-[10px] font-black text-stone-400 dark:text-stone-500 uppercase tracking-[0.3em] mb-10">{day.date}</p>
+          
+          <div className="mb-10 transform group-hover:scale-125 group-hover:rotate-12 transition-all duration-700">
+             <i className={`fa-solid ${day.icon} text-5xl ${day.icon === 'fa-sun' ? 'text-orange-400' : 'text-brand-secondary'} drop-shadow-[0_0_20px_rgba(245,158,11,0.2)]`}></i>
           </div>
+          
           <div className="flex justify-center items-baseline space-x-2">
-            <span className="text-3xl font-black text-stone-900 dark:text-white tracking-tighter">{day.max}°</span>
+            <span className="text-4xl font-black text-stone-900 dark:text-white tracking-tighter">{day.max}°</span>
             <span className="text-sm font-bold text-stone-400">{day.min}°</span>
           </div>
-          <p className="text-[8px] mt-4 text-emerald-500 font-black uppercase tracking-widest">{day.condition}</p>
+          
+          <div className="mt-6">
+            <span className="px-4 py-1.5 rounded-full bg-stone-50 dark:bg-white/5 border border-stone-100 dark:border-white/10 text-[8px] text-brand-primary font-black uppercase tracking-widest group-hover:bg-brand-primary group-hover:text-white transition-all">
+              {day.condition}
+            </span>
+          </div>
         </div>
       ))}
     </div>

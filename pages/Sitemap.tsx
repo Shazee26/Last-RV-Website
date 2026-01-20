@@ -7,6 +7,7 @@ const Sitemap: React.FC = () => {
     { section: 'Primary Pages', color: 'emerald', items: [
       { path: '/', label: 'Home Experience' },
       { path: '/amenities', label: 'Premium Amenities' },
+      { path: '/activities', label: 'Desert Expeditions' },
       { path: '/gallery', label: 'Vibrant Gallery' },
       { path: '/booking', label: 'Secure Booking' },
       { path: '/about', label: 'Our Heritage' },

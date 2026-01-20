@@ -11,6 +11,15 @@ const Amenities: React.FC = () => {
     { icon: 'fa-trash-can', title: 'Waste Management', desc: 'Daily trash pickup at your site and convenient dump stations.', color: 'amber' },
   ];
 
+  const rules = [
+    { icon: 'fa-gauge-high', title: 'Speed Limit', desc: 'Strict 5 MPH speed limit throughout the park to ensure guest safety.', color: 'rose' },
+    { icon: 'fa-clock', title: 'Quiet Hours', desc: '10:00 PM to 8:00 AM. Generators must be off during this period.', color: 'blue' },
+    { icon: 'fa-fire-burner', title: 'Fire Safety', desc: 'Propane fire pits only. Wood fires are strictly prohibited due to desert conditions.', color: 'orange' },
+    { icon: 'fa-dog', title: 'Pet Policy', desc: 'Pets must be on a max 6ft leash. Always clean up after your pets immediately.', color: 'emerald' },
+    { icon: 'fa-trash', title: 'Trash Disposal', desc: 'Please bag all trash and place it inside the provided bins at your site.', color: 'amber' },
+    { icon: 'fa-droplet-slash', title: 'Waste Water', desc: 'Sewer hoses must have an airtight seal. Ground disposal of gray/black water is illegal.', color: 'cyan' },
+  ];
+
   const getColorClasses = (color: string) => {
     const maps: any = {
       emerald: 'from-emerald-400 to-emerald-600 shadow-emerald-500/20',
@@ -19,6 +28,8 @@ const Amenities: React.FC = () => {
       indigo: 'from-indigo-400 to-indigo-600 shadow-indigo-500/20',
       purple: 'from-purple-400 to-purple-600 shadow-purple-500/20',
       amber: 'from-amber-400 to-orange-600 shadow-amber-500/20',
+      rose: 'from-rose-400 to-rose-600 shadow-rose-500/20',
+      orange: 'from-orange-400 to-orange-600 shadow-orange-500/20',
     };
     return maps[color] || maps.emerald;
   };
@@ -43,6 +54,11 @@ const Amenities: React.FC = () => {
       </section>
 
       <div className="max-w-7xl mx-auto px-6 py-32 relative z-10">
+        <div className="text-center mb-20">
+          <h2 className="text-4xl font-black text-stone-900 dark:text-white tracking-tight">Park Amenities</h2>
+          <p className="text-stone-500 dark:text-stone-400 mt-4 max-w-lg mx-auto">Everything you need for a comfortable stay in the high desert.</p>
+        </div>
+        
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10 mb-40">
           {amenities.map((item, idx) => (
             <div key={idx} className="group bg-stone-50 dark:bg-white/5 p-12 rounded-[3.5rem] border border-stone-100 dark:border-white/10 hover:border-emerald-500/50 transition-all duration-500 hover:shadow-2xl hover:scale-[1.02]">
@@ -55,62 +71,35 @@ const Amenities: React.FC = () => {
           ))}
         </div>
 
-        {/* Guidelines section with vibrant typography */}
+        {/* Rules & Regulations Section */}
+        <div className="text-center mb-20">
+          <span className="vibrant-text text-[10px] font-black uppercase tracking-[0.5em] block mb-4">The Code of the Desert</span>
+          <h2 className="text-5xl font-black text-stone-900 dark:text-white tracking-tight">Rules & Regulations</h2>
+          <p className="text-stone-500 dark:text-stone-400 mt-4 max-w-lg mx-auto">Guidelines to ensure a safe and vibrant community for all guests.</p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10 mb-40">
+          {rules.map((rule, idx) => (
+            <div key={idx} className="bg-white dark:bg-[#111114] p-10 rounded-[3rem] border border-stone-100 dark:border-white/5 shadow-sm transition-all hover:shadow-xl group">
+              <div className={`w-14 h-14 bg-gradient-to-br ${getColorClasses(rule.color)} text-white rounded-2xl flex items-center justify-center mb-8 shadow-lg group-hover:scale-110 transition-transform`}>
+                <i className={`fa-solid ${rule.icon} text-xl`}></i>
+              </div>
+              <h4 className="text-xl font-black text-stone-900 dark:text-white mb-4 tracking-tight">{rule.title}</h4>
+              <p className="text-sm text-stone-500 dark:text-stone-400 leading-relaxed font-medium">{rule.desc}</p>
+            </div>
+          ))}
+        </div>
+
+        {/* Philosophy Card */}
         <div className="bg-stone-950 p-12 md:p-24 rounded-[4rem] relative overflow-hidden shadow-3xl shadow-emerald-500/10 border border-white/5">
            <div className="absolute top-0 right-0 p-12 opacity-[0.03]">
              <i className="fa-solid fa-scroll text-[15rem] rotate-12"></i>
            </div>
            
-           <div className="text-center mb-24 relative z-10">
+           <div className="text-center mb-12 relative z-10">
              <span className="text-emerald-400 text-[10px] font-black uppercase tracking-[0.5em] block mb-6">Park Philosophy</span>
              <h2 className="text-5xl font-black text-white tracking-tight mb-6 leading-tight">Living in <span className="text-emerald-500">Harmony.</span></h2>
              <p className="text-stone-400 font-medium max-w-xl mx-auto leading-relaxed">Simple guidelines to ensure every guest experiences the peaceful grandeur of our high-desert oasis.</p>
-           </div>
-
-           <div className="grid grid-cols-1 md:grid-cols-2 gap-20 relative z-10">
-             <div className="space-y-12">
-               <div className="flex items-start space-x-8">
-                 <div className="w-14 h-14 bg-emerald-500/10 rounded-2xl border border-emerald-500/20 flex items-center justify-center text-emerald-400 flex-shrink-0">
-                   <i className="fa-solid fa-clock text-xl"></i>
-                 </div>
-                 <div>
-                   <h4 className="font-black text-white text-xl mb-4 tracking-tight">Quiet Hours</h4>
-                   <p className="text-stone-500 text-sm leading-relaxed font-medium">10:00 PM to 8:00 AM. Desert silence is a luxury. We ask that generators and outdoor noise be kept minimal.</p>
-                 </div>
-               </div>
-               
-               <div className="flex items-start space-x-8">
-                 <div className="w-14 h-14 bg-blue-500/10 rounded-2xl border border-blue-500/20 flex items-center justify-center text-blue-400 flex-shrink-0">
-                   <i className="fa-solid fa-paw text-xl"></i>
-                 </div>
-                 <div>
-                   <h4 className="font-black text-white text-xl mb-4 tracking-tight">Pet Etiquette</h4>
-                   <p className="text-stone-500 text-sm leading-relaxed font-medium">Leash required (max 6ft). Please utilize our vibrant fenced dog run for off-leash exploration.</p>
-                 </div>
-               </div>
-             </div>
-
-             <div className="space-y-12">
-               <div className="flex items-start space-x-8">
-                 <div className="w-14 h-14 bg-amber-500/10 rounded-2xl border border-amber-500/20 flex items-center justify-center text-amber-400 flex-shrink-0">
-                   <i className="fa-solid fa-gauge-high text-xl"></i>
-                 </div>
-                 <div>
-                   <h4 className="font-black text-white text-xl mb-4 tracking-tight">Vibrant Safety</h4>
-                   <p className="text-stone-500 text-sm leading-relaxed font-medium">Strict 5 MPH speed limit. We are a family-first park; your slow pace keeps our desert home safe for everyone.</p>
-                 </div>
-               </div>
-               
-               <div className="flex items-start space-x-8">
-                 <div className="w-14 h-14 bg-orange-500/10 rounded-2xl border border-orange-500/20 flex items-center justify-center text-orange-400 flex-shrink-0">
-                   <i className="fa-solid fa-fire-burner text-xl"></i>
-                 </div>
-                 <div>
-                   <h4 className="font-black text-white text-xl mb-4 tracking-tight">High Desert Fires</h4>
-                   <p className="text-stone-500 text-sm leading-relaxed font-medium">Propane pits welcome. For the protection of our dry landscape, open wood fires are prohibited at all times.</p>
-                 </div>
-               </div>
-             </div>
            </div>
            
            <div className="mt-24 pt-12 border-t border-white/5 text-center">

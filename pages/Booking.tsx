@@ -113,7 +113,10 @@ const Booking: React.FC = () => {
     try {
       const { error } = await supabase.from('bookings').insert([{ ...formData, user_id: user?.id }]);
       if (error) throw error;
-      setStatus({ type: 'success', message: "Reservation confirmed! Your dates are now locked." });
+      setStatus({ 
+        type: 'success', 
+        message: "Reservation confirmed! A vibrant confirmation email has been dispatched to your inbox." 
+      });
       setFormData({ name: '', email: user?.email || '', check_in: '', check_out: '', rv_size: 'standard', guests: 2, user_id: user?.id || '' });
     } catch (err: any) {
       setStatus({ type: 'error', message: err?.message || "Something went wrong." });
@@ -156,7 +159,7 @@ const Booking: React.FC = () => {
                 <div className={`mb-10 p-6 rounded-3xl flex items-start space-x-5 animate-in fade-in zoom-in duration-300 ${
                   status.type === 'success' ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20' : 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20'
                 }`}>
-                  <i className={`fa-solid ${status.type === 'success' ? 'fa-circle-check' : 'fa-triangle-exclamation'} text-xl mt-0.5`}></i>
+                  <i className={`fa-solid ${status.type === 'success' ? 'fa-envelope-circle-check' : 'fa-triangle-exclamation'} text-xl mt-0.5`}></i>
                   <div>
                     <p className="font-black text-sm uppercase tracking-widest">{status.type === 'success' ? 'Mission Success' : 'Error Detected'}</p>
                     <p className="text-xs opacity-80 mt-1 font-medium">{status.message}</p>

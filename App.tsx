@@ -11,17 +11,25 @@ import Contact from './pages/Contact';
 import FAQ from './pages/FAQ';
 import Sitemap from './pages/Sitemap';
 import Login from './pages/Login';
+import Activities from './pages/Activities';
 import ProtectedRoute from './components/ProtectedRoute';
 import AIConcierge from './components/AIConcierge';
 
 const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(() => {
     return localStorage.getItem('theme') === 'dark' || 
       (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches);
   });
   const { user, signOut } = useAuth();
   const location = useLocation();
+
+  useEffect(() => {
+    const handleScroll = () => setScrolled(window.scrollY > 20);
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   useEffect(() => {
     if (isDarkMode) {
@@ -44,6 +52,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
       '/faq': 'Frequently Asked Questions – Park Info & Policies',
       '/sitemap': 'Sitemap – Mountain View RV Park Navigation',
       '/login': 'Login – Guest Portal',
+      '/activities': 'Local Activities – Hiking, Stargazing & Dining',
     };
     document.title = routeTitles[location.pathname] || 'Mountain View RV Park – Van Horn, TX';
     window.scrollTo(0, 0);
@@ -52,6 +61,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const navLinks = [
     { path: '/', label: 'Home' },
     { path: '/amenities', label: 'Amenities' },
+    { path: '/activities', label: 'Activities' },
     { path: '/gallery', label: 'Gallery' },
     { path: '/booking', label: 'Booking' },
     { path: '/faq', label: 'FAQ' },
@@ -60,169 +70,209 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
   return (
     <div className="min-h-screen flex flex-col transition-colors duration-500 overflow-x-hidden">
-      <nav className="bg-white/80 dark:bg-black/80 backdrop-blur-xl sticky top-0 z-50 border-b border-stone-100 dark:border-white/5">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-20 items-center">
+      {/* Precision Navigation */}
+      <nav className={`fixed top-0 left-0 right-0 z-[100] transition-all duration-500 ${scrolled ? 'py-4' : 'py-8'}`}>
+        <div className="max-w-7xl mx-auto px-6">
+          <div className={`glass px-8 py-4 rounded-3xl transition-all duration-500 flex justify-between items-center ${scrolled ? 'shadow-soft border-brand-primary/10' : 'border-transparent'}`}>
             <Link to="/" className="flex items-center space-x-3 group">
-              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-400 to-cyan-500 flex items-center justify-center shadow-lg shadow-emerald-500/20 group-hover:scale-110 transition-transform duration-300">
-                <i className="fa-solid fa-mountain-sun text-white text-2xl"></i>
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-brand-primary to-brand-secondary flex items-center justify-center shadow-vibrant group-hover:rotate-12 transition-all duration-500">
+                <i className="fa-solid fa-mountain-sun text-white text-lg"></i>
               </div>
-              <span className="font-black text-2xl tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 to-blue-600 dark:from-emerald-400 dark:to-cyan-400">Mountain View</span>
+              <span className="font-black text-xl tracking-tighter text-stone-900 dark:text-white">Mountain <span className="text-brand-primary">View</span></span>
             </Link>
             
-            <div className="hidden md:flex items-center space-x-8">
-              <div id="google_translate_element"></div>
+            <div className="hidden lg:flex items-center space-x-8">
+              <div id="google_translate_element" className="opacity-80 hover:opacity-100 transition-opacity"></div>
               
-              {navLinks.map((link) => (
-                <Link
-                  key={link.path}
-                  to={link.path}
-                  className={`text-xs font-black uppercase tracking-widest transition-all hover:scale-105 ${
-                    location.pathname === link.path 
-                      ? 'text-emerald-600 dark:text-emerald-400' 
-                      : 'text-stone-500 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white'
-                  }`}
+              <div className="flex items-center space-x-8 border-x border-stone-100 dark:border-white/5 px-8">
+                {navLinks.map((link) => (
+                  <Link
+                    key={link.path}
+                    to={link.path}
+                    className={`text-[10px] font-black uppercase tracking-[0.2em] transition-all relative group ${
+                      location.pathname === link.path 
+                        ? 'text-brand-primary' 
+                        : 'text-stone-400 hover:text-stone-900 dark:hover:text-white'
+                    }`}
+                  >
+                    {link.label}
+                    <span className={`absolute -bottom-1 left-0 w-full h-0.5 bg-brand-primary transition-all duration-300 ${location.pathname === link.path ? 'opacity-100' : 'opacity-0 scale-x-0 group-hover:opacity-100 group-hover:scale-x-100'}`}></span>
+                  </Link>
+                ))}
+              </div>
+              
+              <div className="flex items-center space-x-6">
+                <button 
+                  onClick={() => setIsDarkMode(!isDarkMode)}
+                  className="w-8 h-8 rounded-lg flex items-center justify-center text-stone-400 hover:text-brand-primary transition-all"
+                  aria-label="Toggle Dark Mode"
                 >
-                  {link.label}
-                </Link>
-              ))}
-              
-              <button 
-                onClick={() => setIsDarkMode(!isDarkMode)}
-                className="w-10 h-10 rounded-xl bg-stone-100 dark:bg-white/5 flex items-center justify-center text-stone-600 dark:text-stone-300 hover:bg-emerald-500 hover:text-white transition-all shadow-sm"
-                aria-label="Toggle Dark Mode"
-              >
-                <i className={`fa-solid ${isDarkMode ? 'fa-sun' : 'fa-moon'}`}></i>
-              </button>
+                  <i className={`fa-solid ${isDarkMode ? 'fa-sun' : 'fa-moon'}`}></i>
+                </button>
 
-              <div className="h-4 w-px bg-stone-200 dark:bg-white/10"></div>
-
-              {user ? (
-                <div className="flex items-center space-x-4">
-                  <span className="text-[10px] font-black uppercase tracking-tighter text-emerald-600 dark:text-emerald-400 truncate max-w-[100px]">Hi, {user.email?.split('@')[0]}</span>
-                  <button onClick={signOut} className="text-[10px] font-black uppercase tracking-widest text-stone-400 hover:text-rose-500 transition-colors">
-                    Logout
-                  </button>
-                </div>
-              ) : (
-                <Link to="/login" className="text-xs font-black uppercase tracking-widest text-emerald-600 dark:text-emerald-400 hover:text-emerald-800 transition-colors">
-                  Login
+                {user ? (
+                  <div className="flex items-center space-x-4">
+                    <span className="text-[9px] font-black uppercase tracking-tighter text-brand-primary">Hi, {user.email?.split('@')[0]}</span>
+                    <button onClick={signOut} className="text-[9px] font-black uppercase tracking-widest text-stone-400 hover:text-rose-500 transition-colors">
+                      Logout
+                    </button>
+                  </div>
+                ) : (
+                  <Link to="/login" className="text-[9px] font-black uppercase tracking-widest text-stone-400 hover:text-brand-primary transition-colors">
+                    Login
+                  </Link>
+                )}
+                
+                <Link
+                  to="/booking"
+                  className="vibrant-gradient text-white px-8 py-3 rounded-xl text-[9px] font-black uppercase tracking-widest hover:scale-105 active:scale-95 transition-all shadow-vibrant"
+                >
+                  Reserve Site
                 </Link>
-              )}
-              
-              <Link
-                to="/booking"
-                className="vibrant-gradient text-white px-8 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:scale-105 active:scale-95 transition-all shadow-xl shadow-emerald-500/20"
-              >
-                Book Now
-              </Link>
+              </div>
             </div>
 
-            <div className="md:hidden flex items-center space-x-4">
-              <button onClick={() => setIsDarkMode(!isDarkMode)} className="w-10 h-10 flex items-center justify-center text-stone-600 dark:text-stone-300">
-                <i className={`fa-solid ${isDarkMode ? 'fa-sun' : 'fa-moon'} text-xl`}></i>
-              </button>
+            <div className="lg:hidden flex items-center space-x-4">
               <button
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
                 className="w-10 h-10 flex items-center justify-center text-stone-600 dark:text-stone-300"
               >
-                <i className={`fa-solid ${isMenuOpen ? 'fa-xmark' : 'fa-bars'} text-2xl`}></i>
+                <div className="space-y-1.5">
+                  <span className={`block w-6 h-0.5 bg-current transition-all ${isMenuOpen ? 'rotate-45 translate-y-2' : ''}`}></span>
+                  <span className={`block w-6 h-0.5 bg-current transition-all ${isMenuOpen ? 'opacity-0' : ''}`}></span>
+                  <span className={`block w-6 h-0.5 bg-current transition-all ${isMenuOpen ? '-rotate-45 -translate-y-2' : ''}`}></span>
+                </div>
               </button>
             </div>
           </div>
         </div>
 
-        {/* Mobile menu with vibrant background */}
+        {/* Mobile Menu Refined */}
         {isMenuOpen && (
-          <div className="md:hidden bg-white/95 dark:bg-stone-900/95 backdrop-blur-2xl border-t border-stone-100 dark:border-white/5 animate-in slide-in-from-top-4 duration-300">
-            <div className="px-6 py-8 space-y-4">
-              {navLinks.map((link) => (
-                <Link
-                  key={link.path}
-                  to={link.path}
-                  onClick={() => setIsMenuOpen(false)}
-                  className={`block px-4 py-4 rounded-2xl text-lg font-bold tracking-tight transition-all ${
-                    location.pathname === link.path 
-                      ? 'bg-emerald-500 text-white shadow-lg' 
-                      : 'text-stone-600 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-white/5'
-                  }`}
-                >
-                  {link.label}
+          <div className="lg:hidden fixed inset-0 z-[110] bg-brand-light/95 dark:bg-brand-dark/95 backdrop-blur-3xl animate-in fade-in duration-300">
+            <div className="p-8 h-full flex flex-col">
+              <div className="flex justify-between items-center mb-16">
+                <Link to="/" onClick={() => setIsMenuOpen(false)} className="flex items-center space-x-3">
+                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-brand-primary to-brand-secondary flex items-center justify-center">
+                    <i className="fa-solid fa-mountain-sun text-white"></i>
+                  </div>
                 </Link>
-              ))}
-              <div className="pt-4 border-t border-stone-100 dark:border-white/5">
-                {user ? (
-                   <button onClick={signOut} className="w-full text-left px-4 py-4 rounded-2xl text-rose-500 font-bold">Logout</button>
-                ) : (
-                   <Link to="/login" onClick={() => setIsMenuOpen(false)} className="block px-4 py-4 rounded-2xl text-emerald-600 font-bold">Login / Sign Up</Link>
-                )}
+                <button onClick={() => setIsMenuOpen(false)} className="w-12 h-12 flex items-center justify-center rounded-full bg-stone-100 dark:bg-white/5">
+                  <i className="fa-solid fa-xmark text-xl"></i>
+                </button>
               </div>
-              <Link
-                to="/booking"
-                onClick={() => setIsMenuOpen(false)}
-                className="block w-full text-center vibrant-gradient text-white px-6 py-5 rounded-3xl font-black uppercase tracking-widest shadow-xl"
-              >
-                Book Now
-              </Link>
+              
+              <div className="space-y-4 flex-grow overflow-y-auto">
+                {navLinks.map((link) => (
+                  <Link
+                    key={link.path}
+                    to={link.path}
+                    onClick={() => setIsMenuOpen(false)}
+                    className="block text-4xl font-black tracking-tighter text-stone-900 dark:text-white hover:text-brand-primary transition-colors"
+                  >
+                    {link.label}
+                  </Link>
+                ))}
+              </div>
+
+              <div className="pt-8 border-t border-stone-100 dark:border-white/5 space-y-6">
+                <div className="flex items-center justify-between">
+                  <button onClick={() => setIsDarkMode(!isDarkMode)} className="flex items-center space-x-3 text-stone-500">
+                    <i className={`fa-solid ${isDarkMode ? 'fa-sun' : 'fa-moon'}`}></i>
+                    <span className="text-xs font-bold">Switch Theme</span>
+                  </button>
+                  {user && <button onClick={signOut} className="text-xs font-bold text-rose-500">Sign Out</button>}
+                </div>
+                <Link
+                  to="/booking"
+                  onClick={() => setIsMenuOpen(false)}
+                  className="block w-full text-center vibrant-gradient text-white py-6 rounded-3xl font-black uppercase tracking-[0.2em] text-xs shadow-vibrant"
+                >
+                  Book Your Stay
+                </Link>
+              </div>
             </div>
           </div>
         )}
       </nav>
 
-      <main className="flex-grow">
+      <main className="flex-grow pt-32 lg:pt-0">
         {children}
       </main>
 
-      <footer className="bg-stone-950 text-white pt-24 pb-12 px-6 relative overflow-hidden">
-        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-emerald-500 via-cyan-500 to-purple-500"></div>
-        <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-16 relative z-10">
-          <div className="col-span-1 md:col-span-1">
-            <div className="flex items-center space-x-3 mb-6">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center shadow-lg">
-                <i className="fa-solid fa-mountain-sun text-white"></i>
+      {/* Modern High-Contrast Footer */}
+      <footer className="bg-brand-dark text-white pt-32 pb-16 relative overflow-hidden">
+        <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-brand-primary/30 to-transparent"></div>
+        
+        <div className="max-w-7xl mx-auto px-8">
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-16 mb-24">
+            <div className="md:col-span-4">
+              <Link to="/" className="flex items-center space-x-3 mb-10 group">
+                <div className="w-12 h-12 rounded-2xl bg-brand-primary flex items-center justify-center shadow-vibrant transition-transform group-hover:scale-110">
+                  <i className="fa-solid fa-mountain-sun text-white text-xl"></i>
+                </div>
+                <span className="font-black text-3xl tracking-tighter">Mountain View</span>
+              </Link>
+              <p className="text-stone-500 text-lg font-medium leading-relaxed max-w-sm">
+                Redefining the West Texas RV experience with a fusion of primitive beauty and modern luxury.
+              </p>
+            </div>
+            
+            <div className="md:col-span-2">
+              <h4 className="text-brand-primary font-black text-[10px] uppercase tracking-[0.4em] mb-10">Explore</h4>
+              <ul className="space-y-6 text-sm font-bold">
+                <li><Link to="/amenities" className="text-stone-400 hover:text-white transition-colors">Amenities</Link></li>
+                <li><Link to="/activities" className="text-stone-400 hover:text-white transition-colors">Activities</Link></li>
+                <li><Link to="/gallery" className="text-stone-400 hover:text-white transition-colors">Gallery</Link></li>
+                <li><Link to="/booking" className="text-stone-400 hover:text-white transition-colors">Reservations</Link></li>
+              </ul>
+            </div>
+
+            <div className="md:col-span-3">
+              <h4 className="text-brand-primary font-black text-[10px] uppercase tracking-[0.4em] mb-10">Connect</h4>
+              <ul className="space-y-6 text-sm font-bold">
+                <li className="flex items-center group cursor-pointer">
+                  <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center mr-4 group-hover:bg-brand-primary/20 transition-all">
+                    <i className="fa-solid fa-phone text-xs text-brand-primary"></i>
+                  </div>
+                  <span className="text-stone-400 group-hover:text-white transition-colors">(432) 283-0005</span>
+                </li>
+                <li className="flex items-center group cursor-pointer">
+                  <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center mr-4 group-hover:bg-brand-primary/20 transition-all">
+                    <i className="fa-solid fa-envelope text-xs text-brand-primary"></i>
+                  </div>
+                  <span className="text-stone-400 group-hover:text-white transition-colors">hello@mtnviewrv.com</span>
+                </li>
+              </ul>
+            </div>
+
+            <div className="md:col-span-3">
+              <h4 className="text-brand-primary font-black text-[10px] uppercase tracking-[0.4em] mb-10">Social Sphere</h4>
+              <div className="flex space-x-4 mb-8">
+                {['facebook-f', 'instagram', 'tiktok', 'youtube'].map((icon) => (
+                  <a key={icon} href="#" className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center text-stone-400 hover:text-white hover:bg-brand-primary transition-all duration-500 shadow-xl border border-white/5">
+                    <i className={`fa-brands fa-${icon}`}></i>
+                  </a>
+                ))}
               </div>
-              <span className="font-black text-xl tracking-tighter">Mountain View</span>
-            </div>
-            <p className="text-sm leading-relaxed text-stone-500 font-medium">
-              Your vibrant desert oasis in the heart of Van Horn, Texas. Premium sites, high-speed Wi-Fi, and the best mountain sunsets in the West.
-            </p>
-          </div>
-          <div>
-            <h4 className="text-white font-black text-xs uppercase tracking-[0.2em] mb-8">Navigation</h4>
-            <ul className="space-y-4 text-sm font-bold">
-              <li><Link to="/" className="text-stone-500 hover:text-emerald-400 transition-colors">Home</Link></li>
-              <li><Link to="/amenities" className="text-stone-500 hover:text-emerald-400 transition-colors">Amenities</Link></li>
-              <li><Link to="/gallery" className="text-stone-500 hover:text-emerald-400 transition-colors">Gallery</Link></li>
-              <li><Link to="/booking" className="text-stone-500 hover:text-emerald-400 transition-colors">Book Stay</Link></li>
-              <li><Link to="/sitemap" className="text-stone-500 hover:text-emerald-400 transition-colors">Sitemap</Link></li>
-            </ul>
-          </div>
-          <div>
-            <h4 className="text-white font-black text-xs uppercase tracking-[0.2em] mb-8">Reach Out</h4>
-            <ul className="space-y-4 text-sm font-bold text-stone-500">
-              <li className="flex items-center"><i className="fa-solid fa-location-dot mr-3 text-emerald-500"></i> Van Horn, TX 79855</li>
-              <li className="flex items-center"><i className="fa-solid fa-phone mr-3 text-emerald-500"></i> (432) 283-0005</li>
-              <li className="flex items-center"><i className="fa-solid fa-envelope mr-3 text-emerald-500"></i> hello@mtnviewrv.com</li>
-            </ul>
-          </div>
-          <div>
-            <h4 className="text-white font-black text-xs uppercase tracking-[0.2em] mb-8">Community</h4>
-            <div className="flex space-x-4">
-              <a href="#" className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center hover:bg-emerald-600 hover:border-emerald-500 transition-all text-stone-400 hover:text-white">
-                <i className="fa-brands fa-facebook-f"></i>
-              </a>
-              <a href="#" className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center hover:bg-emerald-600 hover:border-emerald-500 transition-all text-stone-400 hover:text-white">
-                <i className="fa-brands fa-instagram"></i>
-              </a>
-              <a href="#" className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center hover:bg-emerald-600 hover:border-emerald-500 transition-all text-stone-400 hover:text-white">
-                <i className="fa-brands fa-tiktok"></i>
-              </a>
+              <p className="text-[9px] font-black uppercase tracking-widest text-stone-700">Experience the #MountainViewWay</p>
             </div>
           </div>
-        </div>
-        <div className="max-w-7xl mx-auto mt-24 pt-8 border-t border-white/5 flex flex-col md:flex-row justify-between items-center text-[10px] font-black uppercase tracking-widest text-stone-600">
-          <p>&copy; {new Date().getFullYear()} Mountain View RV Park. Crafted for Pioneers.</p>
-          <Link to="/sitemap" className="mt-4 md:mt-0 hover:text-white transition-colors">Sitemap Navigation</Link>
+
+          <div className="pt-12 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-8">
+            <div className="flex items-center space-x-6">
+              <span className="text-[10px] font-black uppercase tracking-[0.3em] text-stone-700">&copy; {new Date().getFullYear()} MTN VIEW RV</span>
+              <div className="h-1 w-1 rounded-full bg-stone-800"></div>
+              <Link to="/sitemap" className="text-[10px] font-black uppercase tracking-[0.3em] text-stone-700 hover:text-brand-primary transition-colors">Sitemap</Link>
+            </div>
+            
+            <div className="flex items-center space-x-4">
+              <div className="px-4 py-2 rounded-lg bg-white/5 border border-white/10 flex items-center space-x-3">
+                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
+                <span className="text-[9px] font-black uppercase tracking-widest text-stone-500">Van Horn, Texas • Cloud Sync Active</span>
+              </div>
+            </div>
+          </div>
         </div>
       </footer>
       
@@ -239,6 +289,7 @@ export default function App() {
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/amenities" element={<Amenities />} />
+            <Route path="/activities" element={<Activities />} />
             <Route path="/gallery" element={<Gallery />} />
             <Route path="/faq" element={<FAQ />} />
             <Route path="/sitemap" element={<Sitemap />} />

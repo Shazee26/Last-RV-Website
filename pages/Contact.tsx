@@ -1,7 +1,46 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
+
+declare var L: any;
 
 const Contact: React.FC = () => {
+  useEffect(() => {
+    // Initialize map only if L is defined (from CDN in index.html)
+    if (typeof L !== 'undefined') {
+      const container = L.DomUtil.get('map');
+      if (container != null) {
+        container._leaflet_id = null;
+      }
+      
+      const map = L.map('map', {
+        center: [31.0422, -104.8322], // Van Horn, TX coordinates
+        zoom: 14,
+        scrollWheelZoom: false
+      });
+
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap contributors'
+      }).addTo(map);
+
+      const customIcon = L.divIcon({
+        className: 'custom-div-icon',
+        html: `<div style="background-color: #10b981; width: 40px; height: 40px; border-radius: 12px; border: 4px solid white; display: flex; align-items: center; justify-content: center; box-shadow: 0 10px 15px -3px rgba(16, 185, 129, 0.3); transform: rotate(45deg);"><i class="fa-solid fa-mountain-sun" style="color: white; transform: rotate(-45deg); font-size: 18px;"></i></div>`,
+        iconSize: [40, 40],
+        iconAnchor: [20, 40]
+      });
+
+      L.marker([31.0422, -104.8322], { icon: customIcon })
+        .addTo(map)
+        .bindPopup(`
+          <div style="padding: 10px; text-align: center;">
+            <b style="font-size: 16px; color: #10b981;">Mountain View RV Park</b><br>
+            <span style="font-size: 12px; color: #666;">810 Frontage Rd, Van Horn, TX 79855</span>
+          </div>
+        `)
+        .openPopup();
+    }
+  }, []);
+
   return (
     <div className="py-32 bg-[#fdfcfb] dark:bg-[#0a0a0c] min-h-screen transition-colors duration-500 relative overflow-hidden">
       {/* Decorative Elements */}
@@ -96,18 +135,9 @@ const Contact: React.FC = () => {
               </form>
             </div>
             
-            {/* Map UI */}
-            <div className="mt-12 h-64 bg-stone-200 dark:bg-stone-800 rounded-[3rem] overflow-hidden relative shadow-2xl group border border-white/5">
-              <img src="https://images.unsplash.com/photo-1524661135-423995f22d0b?q=80&w=2074&auto=format&fit=crop" alt="Map View" className="w-full h-full object-cover opacity-60 group-hover:scale-110 transition-transform duration-2000" />
-              <div className="absolute inset-0 bg-emerald-900/20"></div>
-              <div className="absolute inset-0 flex flex-col items-center justify-center">
-                <div className="w-16 h-16 bg-white dark:bg-stone-900 rounded-full flex items-center justify-center shadow-2xl animate-bounce">
-                  <i className="fa-solid fa-location-pin text-emerald-500 text-3xl"></i>
-                </div>
-                <div className="mt-4 px-6 py-2 bg-stone-900 text-white rounded-full text-[10px] font-black uppercase tracking-widest backdrop-blur-md shadow-xl border border-white/10">
-                  Open in Google Maps
-                </div>
-              </div>
+            {/* Map Container */}
+            <div className="mt-12 h-80 bg-stone-100 dark:bg-stone-800 rounded-[3rem] overflow-hidden relative shadow-2xl group border border-white/5">
+              <div id="map"></div>
             </div>
           </div>
 

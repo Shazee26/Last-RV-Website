@@ -28,6 +28,7 @@ const Gallery: React.FC = () => {
   const { user } = useAuth();
   const [images, setImages] = useState<GalleryImage[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [filter, setFilter] = useState("All");
   
@@ -48,20 +49,58 @@ const Gallery: React.FC = () => {
   const uploadableCategories = ["Scenery", "Facilities", "Sunsets", "RVs"];
 
   const fetchGallery = async (isManualRefresh = false) => {
-    if (!isManualRefresh) setLoading(true);
+    if (isManualRefresh) setIsRefreshing(true);
+    else setLoading(true);
+
     try {
-      const { data, error } = await supabase
+      // 1. Fetch from database table
+      const { data: dbData, error: dbError } = await supabase
         .from('gallery_images')
         .select('*')
         .order('created_at', { ascending: false });
       
-      if (error) throw error;
-      setImages([...(data || []), ...FEATURED_IMAGES]);
+      if (dbError) throw dbError;
+
+      // 2. Fetch directly from Storage 'gallery' bucket (satisfying the manual refresh request)
+      // Note: We'll look into the 'uploads' folder which is used in handleUpload
+      const { data: storageFiles, error: storageError } = await supabase
+        .storage
+        .from('gallery')
+        .list('uploads', { limit: 50, sortBy: { column: 'created_at', order: 'desc' } });
+
+      let storageImages: GalleryImage[] = [];
+      if (!storageError && storageFiles) {
+        storageImages = storageFiles
+          .filter(file => file.name !== '.emptyFolderPlaceholder')
+          .map(file => {
+            const { data } = supabase.storage.from('gallery').getPublicUrl(`uploads/${file.name}`);
+            return {
+              url: data.publicUrl,
+              title: `Legacy Shot: ${file.name.substring(0, 10)}`,
+              category: 'Scenery',
+              id: file.id
+            };
+          });
+      }
+
+      // Combine all sources: DB, Storage discovery, and hardcoded featured set
+      const combined = [...(dbData || []), ...storageImages, ...FEATURED_IMAGES];
+      
+      // Deduplicate by URL to avoid showing the same image twice
+      const unique = Array.from(new Map(combined.map(img => [img.url, img])).values());
+      
+      setImages(unique);
+      
+      if (isManualRefresh) {
+        setStatus({ type: 'success', message: 'Gallery synchronized with desert cloud.' });
+        setTimeout(() => setStatus(null), 3000);
+      }
     } catch (err: any) {
       console.error('Gallery fetch error:', err);
       setImages(FEATURED_IMAGES);
     } finally {
-      if (!isManualRefresh) setLoading(false);
+      setLoading(false);
+      setIsRefreshing(false);
     }
   };
 
@@ -86,11 +125,9 @@ const Gallery: React.FC = () => {
       setPreviewUrl(null);
       return;
     }
-    // Basic regex for visual feedback, but let the browser try to render it anyway
     if (url.match(/^(https?:\/\/.*\.(?:png|jpg|jpeg|gif|webp))/i) || url.includes('supabase.co')) {
       setPreviewUrl(url);
     } else {
-      // Still set preview but it might fail, which is handled by img onError
       setPreviewUrl(url);
     }
   };
@@ -108,7 +145,7 @@ const Gallery: React.FC = () => {
       if (submissionMode === 'file' && selectedFile) {
         const fileExt = selectedFile.name.split('.').pop();
         const fileName = `${Date.now()}-${Math.floor(Math.random() * 1000)}.${fileExt}`;
-        const filePath = `uploads/${user.id}/${fileName}`;
+        const filePath = `uploads/${fileName}`; // Note: simplified path as defined in storage.sql check
 
         const { error: uploadError } = await supabase.storage
           .from('gallery')
@@ -119,7 +156,6 @@ const Gallery: React.FC = () => {
         const { data: { publicUrl } } = supabase.storage.from('gallery').getPublicUrl(filePath);
         finalUrl = publicUrl;
       } else if (submissionMode === 'link' && externalUrl) {
-        // Simple validation
         if (!externalUrl.startsWith('http')) {
           throw new Error("Please provide a valid URL starting with http or https.");
         }
@@ -142,12 +178,10 @@ const Gallery: React.FC = () => {
 
       if (dbError) throw dbError;
 
-      // Optimistic update
       if (inserted && inserted[0]) {
         setImages(prev => [inserted[0], ...prev]);
       }
 
-      // Cleanup
       setUploadTitle("");
       setUploadCheckIn("");
       setUploadCheckOut("");
@@ -171,7 +205,18 @@ const Gallery: React.FC = () => {
       <div className="max-w-7xl mx-auto px-4">
         
         {/* Header */}
-        <div className="text-center mb-16 animate-in fade-in duration-1000">
+        <div className="text-center mb-16 animate-in fade-in duration-1000 relative">
+          <div className="absolute top-0 right-0">
+             <button 
+               onClick={() => fetchGallery(true)} 
+               disabled={isRefreshing}
+               className="group flex items-center space-x-3 bg-stone-800/50 hover:bg-emerald-600 px-6 py-3 rounded-2xl border border-stone-700 transition-all active:scale-95 disabled:opacity-50"
+               title="Manually sync images from cloud storage"
+             >
+                <i className={`fa-solid fa-arrows-rotate text-xs transition-transform duration-700 ${isRefreshing ? 'animate-spin' : 'group-hover:rotate-180'}`}></i>
+                <span className="text-[10px] font-black uppercase tracking-widest">{isRefreshing ? 'Syncing...' : 'Sync Storage'}</span>
+             </button>
+          </div>
           <span className="text-emerald-500 text-[10px] font-black uppercase tracking-[0.5em] block mb-4">Park Chronicles</span>
           <h1 className="text-5xl md:text-8xl font-bold mb-6 tracking-tighter">Guest Gallery</h1>
           <p className="text-stone-400 text-lg max-w-2xl mx-auto leading-relaxed">

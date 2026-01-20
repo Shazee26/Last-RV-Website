@@ -37,34 +37,37 @@ const AIConcierge: React.FC = () => {
   };
 
   return (
-    <div className="fixed bottom-8 right-8 z-[100] flex flex-col items-end">
+    <div className="fixed bottom-8 right-8 z-[150] flex flex-col items-end">
       {isOpen && (
-        <div className="bg-white dark:bg-[#0c0c0e] w-80 sm:w-[400px] h-[600px] mb-6 rounded-[2.5rem] shadow-2xl border border-stone-100 dark:border-white/5 flex flex-col overflow-hidden animate-in slide-in-from-bottom-8 duration-500">
-          <div className="vibrant-gradient p-8 text-white flex justify-between items-center relative overflow-hidden">
-            <div className="absolute top-0 right-0 p-8 opacity-10">
-               <i className="fa-solid fa-hat-cowboy text-8xl rotate-12"></i>
+        <div className="glass w-80 sm:w-[420px] h-[650px] mb-6 rounded-[3rem] shadow-2xl border-white/20 flex flex-col overflow-hidden animate-in slide-in-from-bottom-12 duration-500">
+          <div className="vibrant-gradient p-10 text-white flex justify-between items-center relative overflow-hidden">
+            <div className="absolute top-0 right-0 p-10 opacity-10">
+               <i className="fa-solid fa-hat-cowboy text-9xl rotate-12"></i>
             </div>
-            <div className="flex items-center space-x-4 relative z-10">
-              <div className="w-12 h-12 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center border border-white/20">
+            <div className="flex items-center space-x-6 relative z-10">
+              <div className="w-14 h-14 bg-white/20 backdrop-blur-3xl rounded-2xl flex items-center justify-center border border-white/30 shadow-xl">
                 <i className="fa-solid fa-hat-cowboy text-2xl"></i>
               </div>
               <div>
-                <span className="font-black text-sm uppercase tracking-widest block">Van Horn Concierge</span>
-                <span className="text-[10px] font-bold text-white/60">Ready to assist • 24/7</span>
+                <span className="font-black text-lg tracking-tight block">Frontier AI</span>
+                <div className="flex items-center space-x-2">
+                   <div className="w-2 h-2 rounded-full bg-brand-primary animate-pulse"></div>
+                   <span className="text-[10px] font-black text-white/70 uppercase tracking-widest">Active & Ready</span>
+                </div>
               </div>
             </div>
-            <button onClick={() => setIsOpen(false)} aria-label="Close Chat" className="relative z-10 w-8 h-8 rounded-full bg-black/20 hover:bg-black/40 transition-colors flex items-center justify-center">
+            <button onClick={() => setIsOpen(false)} aria-label="Close Chat" className="relative z-10 w-10 h-10 rounded-full bg-black/20 hover:bg-black/40 transition-all flex items-center justify-center">
               <i className="fa-solid fa-xmark text-sm"></i>
             </button>
           </div>
           
-          <div ref={scrollRef} className="flex-grow overflow-y-auto p-6 space-y-6 bg-stone-50 dark:bg-[#0a0a0c]">
+          <div ref={scrollRef} className="flex-grow overflow-y-auto p-8 space-y-8 bg-stone-50/50 dark:bg-brand-dark/50">
             {messages.map((m, i) => (
               <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                <div className={`max-w-[85%] p-5 rounded-[1.8rem] text-sm leading-relaxed font-medium ${
+                <div className={`max-w-[90%] p-6 rounded-[2.5rem] text-sm leading-relaxed font-medium transition-all duration-300 ${
                   m.role === 'user' 
-                    ? 'vibrant-gradient text-white rounded-br-none shadow-xl shadow-emerald-500/10' 
-                    : 'bg-white dark:bg-[#111114] text-stone-800 dark:text-stone-200 shadow-sm border border-stone-100 dark:border-white/5 rounded-bl-none'
+                    ? 'vibrant-gradient text-white rounded-br-none shadow-vibrant' 
+                    : 'bg-white dark:bg-stone-900 text-stone-800 dark:text-stone-200 shadow-soft border border-stone-100 dark:border-white/5 rounded-bl-none'
                 }`}>
                   {m.text}
                 </div>
@@ -72,41 +75,41 @@ const AIConcierge: React.FC = () => {
             ))}
             {isLoading && (
               <div className="flex justify-start">
-                <div className="bg-white dark:bg-[#111114] p-5 rounded-[1.8rem] rounded-bl-none border border-stone-100 dark:border-white/5 shadow-sm">
-                  <div className="flex space-x-1.5">
-                    <div className="w-2 h-2 bg-emerald-500 rounded-full animate-bounce"></div>
-                    <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce [animation-delay:0.2s]"></div>
-                    <div className="w-2 h-2 bg-purple-500 rounded-full animate-bounce [animation-delay:0.4s]"></div>
+                <div className="bg-white dark:bg-stone-900 p-6 rounded-[2.5rem] rounded-bl-none border border-stone-100 dark:border-white/5 shadow-soft">
+                  <div className="flex space-x-2">
+                    <div className="w-2 h-2 bg-brand-primary rounded-full animate-bounce"></div>
+                    <div className="w-2 h-2 bg-brand-secondary rounded-full animate-bounce [animation-delay:0.2s]"></div>
+                    <div className="w-2 h-2 bg-brand-accent rounded-full animate-bounce [animation-delay:0.4s]"></div>
                   </div>
                 </div>
               </div>
             )}
           </div>
 
-          <div className="p-6 bg-white dark:bg-[#0c0c0e] border-t border-stone-100 dark:border-white/5 flex items-center space-x-4">
+          <div className="p-8 bg-white/80 dark:bg-brand-dark/80 backdrop-blur-3xl border-t border-stone-100 dark:border-white/5 flex items-center space-x-4">
             <input
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-              placeholder="Ask anything..."
-              className="flex-grow bg-stone-100 dark:bg-white/5 border-none rounded-2xl px-6 py-4 text-sm font-medium focus:ring-2 focus:ring-emerald-500 transition-all outline-none dark:text-white"
+              placeholder="Query the frontier..."
+              className="flex-grow bg-stone-100 dark:bg-white/5 border-none rounded-2xl px-6 py-5 text-sm font-bold focus:ring-2 focus:ring-brand-primary transition-all outline-none dark:text-white"
             />
             <button
               onClick={handleSend}
               disabled={isLoading || !input.trim()}
-              className="w-14 h-14 rounded-2xl vibrant-gradient text-white flex items-center justify-center hover:scale-105 active:scale-95 transition-all shadow-xl shadow-emerald-500/20 disabled:opacity-30"
+              className="w-16 h-16 rounded-2xl vibrant-gradient text-white flex items-center justify-center hover:scale-105 active:scale-95 transition-all shadow-vibrant disabled:opacity-30 flex-shrink-0"
             >
-              <i className="fa-solid fa-paper-plane text-lg"></i>
+              <i className="fa-solid fa-paper-plane text-xl"></i>
             </button>
           </div>
         </div>
       )}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="w-16 h-16 rounded-[2rem] vibrant-gradient text-white flex items-center justify-center shadow-2xl shadow-emerald-500/30 hover:scale-110 active:scale-95 transition-all border-4 border-white dark:border-stone-900"
+        className="w-20 h-20 rounded-[2.5rem] vibrant-gradient text-white flex items-center justify-center shadow-vibrant hover:scale-110 active:scale-95 transition-all border-4 border-white dark:border-brand-dark"
       >
-        <i className={`fa-solid ${isOpen ? 'fa-comments' : 'fa-hat-cowboy'} text-2xl`}></i>
+        <i className={`fa-solid ${isOpen ? 'fa-comments' : 'fa-hat-cowboy'} text-3xl`}></i>
       </button>
     </div>
   );

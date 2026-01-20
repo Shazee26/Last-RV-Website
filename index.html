@@ -10,57 +10,111 @@
   
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Outfit:wght@700;900&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Outfit:wght@700;800;900&display=swap');
     
-    body {
-      font-family: 'Plus Jakarta Sans', sans-serif;
-    }
-    h1, h2, h3 {
-      font-family: 'Outfit', sans-serif;
+    :root {
+      --accent-primary: #10b981;
+      --accent-secondary: #3b82f6;
+      --accent-tertiary: #8b5cf6;
     }
 
-    /* Vibrant Gradients */
-    .vibrant-gradient {
-      background: linear-gradient(135deg, #10b981 0%, #3b82f6 50%, #8b5cf6 100%);
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      overflow-x: hidden;
     }
     
+    h1, h2, h3, h4 {
+      font-family: 'Outfit', sans-serif;
+      letter-spacing: -0.04em;
+    }
+
+    /* Refined Gradients */
+    .vibrant-gradient {
+      background: linear-gradient(135deg, #00f2fe 0%, #4facfe 100%);
+      position: relative;
+    }
+    
+    .vibrant-gradient::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(255,255,255,0.2), transparent);
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+    
+    .vibrant-gradient:hover::after {
+      opacity: 1;
+    }
+
     .vibrant-text {
       background: linear-gradient(135deg, #10b981 0%, #3b82f6 50%, #8b5cf6 100%);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
+      display: inline-block;
     }
 
-    /* Google Translate Styles */
+    /* Luxury Glassmorphism */
+    .glass {
+      background: rgba(255, 255, 255, 0.7);
+      backdrop-filter: blur(20px) saturate(180%);
+      -webkit-backdrop-filter: blur(20px) saturate(180%);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+    }
+    
+    .dark .glass {
+      background: rgba(10, 10, 12, 0.7);
+      backdrop-filter: blur(20px) saturate(180%);
+      -webkit-backdrop-filter: blur(20px) saturate(180%);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    /* Mesh Backgrounds */
+    .mesh-gradient {
+      background-color: #fdfcfb;
+      background-image: 
+        radial-gradient(at 0% 0%, rgba(16, 185, 129, 0.05) 0px, transparent 50%),
+        radial-gradient(at 100% 0%, rgba(59, 130, 246, 0.05) 0px, transparent 50%);
+    }
+    
+    .dark .mesh-gradient {
+      background-color: #0a0a0c;
+      background-image: 
+        radial-gradient(at 0% 0%, rgba(16, 185, 129, 0.1) 0px, transparent 50%),
+        radial-gradient(at 100% 0%, rgba(59, 130, 246, 0.1) 0px, transparent 50%);
+    }
+
+    /* Custom Transitions */
+    .page-transition {
+      animation: fadeIn 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Google Translate Styles Refined */
     #google_translate_element {
       display: inline-block;
     }
     .goog-te-gadget-simple {
-      background-color: transparent !important;
-      border: 1px solid rgba(16, 185, 129, 0.2) !important;
-      padding: 4px 8px !important;
-      border-radius: 9999px !important;
-      font-size: 12px !important;
+      background-color: rgba(255,255,255,0.05) !important;
+      border: 1px solid rgba(16, 185, 129, 0.1) !important;
+      padding: 6px 12px !important;
+      border-radius: 16px !important;
+      font-size: 11px !important;
+      transition: all 0.3s ease !important;
     }
-    .goog-te-menu-value span {
-      color: #10b981 !important;
-      font-weight: 700 !important;
-    }
-    .goog-te-gadget-icon {
-      display: none !important;
+    .goog-te-gadget-simple:hover {
+      background-color: rgba(16, 185, 129, 0.05) !important;
+      border-color: rgba(16, 185, 129, 0.3) !important;
     }
     
-    /* Smooth Transitions */
-    body {
-      transition: background-color 0.5s cubic-bezier(0.4, 0, 0.2, 1), color 0.5s ease;
-    }
-
-    .glass {
-      background: rgba(255, 255, 255, 0.05);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-    }
+    #map { height: 100%; width: 100%; border-radius: 2.5rem; }
   </style>
   <script>
     tailwind.config = {
@@ -68,18 +122,28 @@
       theme: {
         extend: {
           colors: {
+            brand: {
+              primary: '#10b981',
+              secondary: '#3b82f6',
+              accent: '#8b5cf6',
+              dark: '#0a0a0c',
+              light: '#fdfcfb'
+            },
             vibrant: {
-              green: '#10b981',
-              blue: '#3b82f6',
-              purple: '#8b5cf6',
-              orange: '#f59e0b',
-              neon: '#afff14'
+              neon: '#afff14',
+              cyan: '#06b6d4'
             }
           },
-          fontFamily: {
-            sans: ['Plus Jakarta Sans', 'sans-serif'],
-            serif: ['Outfit', 'sans-serif'],
+          borderRadius: {
+            '4xl': '2.5rem',
+            '5xl': '3.5rem',
+            '6xl': '5rem',
           },
+          boxShadow: {
+            'soft': '0 20px 50px rgba(0,0,0,0.03)',
+            'vibrant': '0 20px 50px rgba(16, 185, 129, 0.15)',
+            'vibrant-blue': '0 20px 50px rgba(59, 130, 246, 0.15)',
+          }
         }
       }
     }
@@ -95,7 +159,6 @@
     }
   </script>
   <script type="text/javascript" src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
-  <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_GOOGLE_API_KEY&libraries=places"></script>
 <script type="importmap">
 {
   "imports": {
@@ -104,12 +167,13 @@
     "@google/genai": "https://esm.sh/@google/genai@^1.37.0",
     "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@^2.48.1",
     "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+    "react-dom": "https://esm.sh/react-dom@^19.2.3",
     "react-router-dom": "https://esm.sh/react-router-dom@^7.12.0"
   }
 }
 </script>
 </head>
-<body class="bg-[#fdfcfb] text-stone-900 dark:bg-[#0a0a0c] dark:text-stone-100 selection:bg-emerald-500/30">
+<body class="bg-[#fdfcfb] text-stone-900 dark:bg-[#0a0a0c] dark:text-stone-100 selection:bg-brand-primary/30 mesh-gradient transition-colors duration-700">
   <div id="root"></div>
 </body>
 </html>
